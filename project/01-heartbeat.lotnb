@@ -1,0 +1,17 @@
+[
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "# Lab 1: Heartbeat\n\n**Goal:** deploy your first Action and watch it in the Data Viewer.\n\n**You will build:** `Heartbeat`, an Action that publishes `ok` to `campus/weather/heartbeat` every 5 seconds.\n\n**How to run a cell:** click ▷ at the top left of the cell. **Deploy All** (top right) runs every cell of this notebook, top to bottom. Each cell answers *… added successfully*."
+ },
+ {
+  "kind": 2,
+  "language": "lot",
+  "value": "DEFINE ACTION Heartbeat\nON EVERY 5 SECONDS DO\n    PUBLISH TOPIC \"campus/weather/heartbeat\" WITH \"ok\""
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## Check it worked\n\nOpen **Data Viewer**. Under `campus` → `weather` you see `heartbeat`, and a new `ok` arrives every 5 seconds.\n\nDocs: [Action syntax](https://docs.coreflux.org/latest/lot-language/actions/syntax)."
+ }
+]

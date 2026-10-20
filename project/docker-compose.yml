@@ -1,0 +1,61 @@
+# Weather-station hackathon: broker + HUB + Mailpit (test mail server).
+#
+#   docker compose up -d        start everything
+#   docker compose down         stop (your broker data is kept in the broker-data volume)
+#   docker compose down -v      stop and wipe the broker (start the labs from zero)
+#
+# Then open the HUB at http://localhost:3000 and Mailpit at http://localhost:8025.
+#
+# Images: the lesson needs Broker 2.21.22 or later and HUB 2.11.4 or later.
+# Organisers: replace GA_BROKER_TAG and GA_HUB_TAG below with the GA release tags
+# before handing this out (or set BROKER_IMAGE / HUB_IMAGE to full image names).
+#
+# Licence (Lab 5): either send -activateLicense <code> from the HUB Command Console
+# (see README section 2), or put the event activation code in COREFLUX_ACTIVATION_CODE
+# below before the first `docker compose up`. Leave it empty for Community Edition.
+services:
+  broker:
+    image: ${BROKER_IMAGE:-coreflux/coreflux-mqtt-broker:GA_BROKER_TAG}
+    container_name: weather-broker
+    restart: unless-stopped
+    ports:
+      - "1883:1883"   # MQTT (VS Code, mosquitto_pub)
+      - "9100:9100"   # health: http://localhost:9100/health
+    volumes:
+      - broker-data:/etc/project          # everything the broker stores
+      - ./templates:/templates:ro         # heat-alert.html for the HeatMail Connector
+      - ./exports:/data/exports           # campus-weather.csv from the WeatherHistory Connector
+    environment:
+      - COREFLUX_ACTIVATION_CODE=${COREFLUX_ACTIVATION_CODE:-}   # event licence code, or empty
+    healthcheck:
+      disable: true
+
+  hub:
+    image: ${HUB_IMAGE:-coreflux/coreflux-hub:GA_HUB_TAG}
+    container_name: weather-hub
+    restart: unless-stopped
+    ports:
+      - "3000:3000"   # HUB: http://localhost:3000
+    environment:
+      # Pre-fills New Connection. The HUB talks to the broker from inside Docker,
+      # so the host is the service name "broker", not localhost.
+      - HUB_DEFAULT_CONNECTION_NAME=Weather station
+      - HUB_DEFAULT_CONNECTION_HOST=broker
+      - HUB_DEFAULT_CONNECTION_PROTOCOL=mqtt
+      - HUB_DEFAULT_CONNECTION_PORT=1883
+    volumes:
+      - hub-data:/opt/coreflux-hub/data
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: weather-mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"   # inbox: http://localhost:8025 (the broker sends to mailpit:1025 inside Docker)
+    environment:
+      - MP_SMTP_AUTH_ACCEPT_ANY=1
+      - MP_SMTP_AUTH_ALLOW_INSECURE=1
+
+volumes:
+  broker-data:
+  hub-data:

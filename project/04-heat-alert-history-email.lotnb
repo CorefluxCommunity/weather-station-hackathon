@@ -1,0 +1,42 @@
+[
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "# Lab 4: heat alert, history and email\n\n**Goal:** react to the readings.\n\n**You will build:**\n1. `HeatAlert`, an Action: compares each reading with the limit on `config/heat_limit_c` (set in `00-setup`).\n2. `WeatherHistory`, a Connector: appends every reading to `exports/campus-weather.csv`.\n3. `HeatMail`, a Connector: emails the team once per heat episode, to Mailpit (http://localhost:8025)."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 1. HeatAlert\n\n- `campus/weather/alerts/heat_active` gets `on` or `off` on every reading. The words are `on`/`off`, not `true`/`false`, on purpose: LoT can mistake the text `\"false\"` for a boolean.\n- `campus/weather/alerts/heat` gets the reading only when the state goes from off to on, so the team gets one email per heat episode, not one every 5 minutes.\n- While `config/heat_limit_c` is empty the alert stays `off`."
+ },
+ {
+  "kind": 2,
+  "language": "lot",
+  "value": "DEFINE ACTION HeatAlert\nON TOPIC \"campus/weather/reading\" DO\n    SET \"temp_c\" WITH (GET JSON \"temperature_c\" IN PAYLOAD AS DOUBLE)\n    SET \"limit_raw\" WITH GET TOPIC \"config/heat_limit_c\"\n    SET \"was\" WITH GET TOPIC \"campus/weather/alerts/heat_active\"\n    IF {limit_raw} == EMPTY THEN\n        PUBLISH TOPIC \"campus/weather/alerts/heat_active\" WITH \"off\"\n    ELSE\n        SET \"heat_limit\" WITH (GET TOPIC \"config/heat_limit_c\" AS DOUBLE)\n        IF {temp_c} > {heat_limit} THEN\n            IF {was} != \"on\" THEN\n                PUBLISH TOPIC \"campus/weather/alerts/heat\" WITH PAYLOAD\n            PUBLISH TOPIC \"campus/weather/alerts/heat_active\" WITH \"on\"\n        ELSE\n            PUBLISH TOPIC \"campus/weather/alerts/heat_active\" WITH \"off\""
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 2. WeatherHistory (CSV file)\n\nAppends every reading as one line of `campus-weather.csv`, with a header line first. With the lesson's `docker-compose.yml`, the file is in `project/exports` on your laptop (`/data/exports` inside the broker).\n\n- The `timestamp` column is written with extra quotes, like `\"\"\"2026-10-20 08:15:00\"\"\"`. That is a known broker issue; spreadsheets read it as text. The time is UTC, not local time.\n- In the HUB's **Connectors** window this Connector shows red / disconnected. That is how file Connectors report their status today. Check the file instead."
+ },
+ {
+  "kind": 2,
+  "language": "lot",
+  "value": "DEFINE CONNECTOR WeatherHistory WITH TYPE FILE_STORAGE\n    ADD FILE_STORAGE_CONFIG\n        WITH STORAGE_DIR \"/data/exports\"\n        WITH FORMAT \"CSV\"\n        WITH FILE_PATTERN \"campus-weather.csv\"\n        WITH APPEND \"true\"\n    ADD EVENT SaveReading\n        WITH SOURCE_TOPIC \"campus/weather/reading\"\n        WITH QUERY \"CLEAN:{table: campus_weather, data: {value.json}}\""
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 3. HeatMail (email)\n\nThe body comes from `templates/heat-alert.html`, filled in with the reading. The cell is set up for **Mailpit**, the test mail server in `docker-compose.yml`: port `1025`, no TLS, `SMTP_HOST=mailpit`. Mailpit accepts any user and password; nothing leaves your machine.\n\n- For a real mailbox: set `SMTP_HOST`, `SMTP_USER` and the `SMTP_PASSWORD` secret to your provider's, and change `PORT` to `587` and `USE_TLS` to `true`.\n- If `/templates/heat-alert.html` is missing, the email still goes out, with the raw reading as the body and no error."
+ },
+ {
+  "kind": 2,
+  "language": "lot",
+  "value": "DEFINE CONNECTOR HeatMail WITH TYPE EMAIL\n    ADD SMTP_CONFIG\n        WITH HOST GET ENV \"SMTP_HOST\"\n        WITH PORT 1025\n        WITH USERNAME GET ENV \"SMTP_USER\"\n        WITH PASSWORD GET SECRET \"SMTP_PASSWORD\"\n        WITH USE_TLS false\n    ADD EVENT SendHeatAlert\n        WITH SOURCE_TOPIC \"campus/weather/alerts/heat\"\n        WITH RECIPIENT \"ops@example.com\"\n        WITH SUBJECT \"Campus heat alert\"\n        WITH TEMPLATE_PATH \"/templates/heat-alert.html\""
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## Check it worked\n\n1. In **Data Viewer → Publish**, publish `1` to `config/heat_limit_c` with **Retain** on, then publish `poll` to `campus/weather/request`.\n2. `campus/weather/alerts/heat_active` turns `on`, and one message arrives on `campus/weather/alerts/heat`.\n3. Open **http://localhost:8025** (Mailpit): one email, *Campus heat alert*. Poll again: no second email (same heat episode).\n4. `project/exports/campus-weather.csv` has a line per reading.\n5. Publish `30` (Retain on) to `config/heat_limit_c` to put the limit back. `heat_active` turns `off` at the next reading.\n\nDocs: [File storage](https://docs.coreflux.org/latest/lot-language/routes/data-storage/file-storage) · [Email](https://docs.coreflux.org/latest/lot-language/routes/notifications/email)."
+ }
+]

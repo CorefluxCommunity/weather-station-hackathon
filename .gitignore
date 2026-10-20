@@ -1,0 +1,19 @@
+# OS and editors
+.DS_Store
+._*
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Lab output (the CSV history the broker writes)
+project/exports/*
+!project/exports/.gitkeep
+
+# Local settings and secrets
+.env
+.env.*
+*.env
+docker-compose.override.yml
+*.log
+*.bak

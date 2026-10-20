@@ -1,0 +1,17 @@
+[
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "# Lab 6: the Campus Weather panel\n\n**Goal:** a live dashboard for the station.\n\n**You will build:** `CampusWeather`, a Panel with four components: the °C gauge, the Fahrenheit value, the wind in km/h and the heat state (`on`/`off`). They read `campus/weather/reading` and `campus/weather/alerts/heat_active`.\n\nIndent every `WITH` line 4 spaces under `DEFINE PANEL`, as below. Each component picks its field from the reading with `WITH JSON_PATH \"…\"` on its `BIND` line."
+ },
+ {
+  "kind": 2,
+  "language": "lot",
+  "value": "DEFINE PANEL CampusWeather\n    WITH VISIBILITY PUBLIC\n    WITH STATE PUBLISHED\n    WITH TITLE \"Campus Weather\"\n    WITH LAYOUT \"grid\" COLUMNS 4 ROWS 1\n\n    ADD COMPONENT \"TempGauge\" WITH TYPE \"gauge\"\n        AT COLUMN 1 ROW 1\n        SET LABEL \"Temperature\"\n        SET RANGE FROM -20 TO 45\n        SET UNIT \"°C\"\n        BIND VALUE TO TOPIC \"campus/weather/reading\" WITH JSON_PATH \"temperature_c\"\n\n    ADD COMPONENT \"TempF\" WITH TYPE \"value\"\n        AT COLUMN 2 ROW 1\n        SET LABEL \"Fahrenheit\"\n        SET UNIT \"°F\"\n        SET DECIMALS 1\n        BIND VALUE TO TOPIC \"campus/weather/reading\" WITH JSON_PATH \"temperature_f\"\n\n    ADD COMPONENT \"Wind\" WITH TYPE \"value\"\n        AT COLUMN 3 ROW 1\n        SET LABEL \"Wind\"\n        SET UNIT \"km/h\"\n        SET DECIMALS 1\n        BIND VALUE TO TOPIC \"campus/weather/reading\" WITH JSON_PATH \"wind_kmh\"\n\n    ADD COMPONENT \"HeatState\" WITH TYPE \"text\"\n        AT COLUMN 4 ROW 1\n        SET LABEL \"Heat alert\"\n        BIND CONTENT TO TOPIC \"campus/weather/alerts/heat_active\""
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## Check it worked\n\nOpen **Dashboards** from the dock: *Campus Weather* is listed; click it. The boxes show `---` until the next reading arrives: publish `poll` to `campus/weather/request` and all four values fill in (°C, °F, km/h, `on`/`off`).\n\nDocs: [Defining panels](https://docs.coreflux.org/latest/lot-language/panels/defining-panels) · [Data binding](https://docs.coreflux.org/latest/lot-language/panels/data-binding)."
+ }
+]

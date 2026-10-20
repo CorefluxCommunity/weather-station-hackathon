@@ -1,0 +1,42 @@
+[
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "# Stretch goals\n\nPick any. Write your code in new cells here, one `DEFINE` per cell, and give every new piece its own name. To change a piece from an earlier lab (CampusWeather, the panel), edit its cell in that lab's notebook and run it again."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 1. Protect the alert and raw topics (event licence)\n\nRight now any client can publish to `campus/weather/alerts/heat` (which emails the team) or to `campus/weather/raw` (which creates fake readings and history lines). Write a Rule that stops that.\n\nThink about who must still publish there: the CampusWeather Connector writes `raw` and HeatAlert writes `alerts/heat`. Then check: as `bob`, a publish there is refused, and `poll` still gives a reading and an alert. If readings stop, remove your Rule with `-removeRule <Name>`."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 2. Wind alert\n\nAdd a `config/wind_limit_kmh` topic and a `WindAlert` Action that works like HeatAlert, publishing `on`/`off` to `campus/weather/alerts/wind_active`."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 3. Daily min and max\n\nIn an Action on `campus/weather/reading`, keep the day's lowest and highest temperature with `KEEP TOPIC \"campus/weather/stats/min\" WITH {t}` (the broker stores it without publishing; read it back with `GET TOPIC`). Publish them once a day with two Actions, `ON EVERY WEEKDAY AT \"23:59:00\"` and `ON EVERY WEEKEND AT \"23:59:00\"` (there is no `ON EVERY DAY AT`)."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 4. A second site\n\nAdd a second event to CampusWeather (Lab 3) with its own request and raw topics and a fixed latitude and longitude in the `ENDPOINT`."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 5. Show more on the panel\n\nAdd the wind in mph and the time of the last reading to the Campus Weather panel (Lab 6): two more components, each bound with `BIND VALUE TO TOPIC \"campus/weather/reading\" WITH JSON_PATH \"wind_mph\"` (or `\"timestamp\"`). Widen the layout (`COLUMNS 6`) and give each its own `AT COLUMN`. Edit the panel cell in `06-panel` and run it again."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 6. One Thing per site\n\nRewrite the station as a `DEFINE THING TEMPLATE` (see the slides) so a second site is one line. The Thing brings its own Connector, so on Community Edition (3 Connectors) remove one first (`-removeConnector <Name>`) or use the event licence. Try it with `-addThing --dryRun …` in Command Console before you deploy."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## Two LoT quirks\n\n- Compare against `\"on\"`/`\"off\"`, not the text `\"true\"`/`\"false\"`: LoT treats `\"false\"` as a boolean and the Action fails.\n- Don't put a product in parentheses after a division, like `{a} / ({b} * {c})`: it is worked out left to right. Divide in two steps: `SET \"x\" WITH ({a} / {b})`, then `({x} / {c})`."
+ }
+]

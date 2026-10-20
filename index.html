@@ -1,0 +1,977 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Coreflux Training · The weather station</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* Palette: the brick set from the LoT-in-four-bricks video (Connector purple, Model teal, Action orange, Rule yellow). */
+:root {
+  --bg: #f0f0f4; --surface: #ffffff; --sunk: #f7f7f9; --ink: #1f2629; --muted: #4f5a6a; --line: #c9cfd6;
+  --accent: #fb6107; --accent-ink: #ffffff; --focus: #fb6107;
+  --route: #7b2ff7; --model: #12b5c6; --action: #fb6107; --rule: #f5b301; --base: #25353b; --tile: #2c383d; --black: #1f2629;
+  --code-bg: #1f2629; --code-ink: #ece7de; --code-kw: #4fd6e4; --code-str: #ffb27a; --code-var: #b08cff; --code-com: #a7b2b6;
+  --font: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --mono: "Space Mono", ui-monospace, Consolas, monospace;
+  color-scheme: light;
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
+h1, h2, h3 { margin: 0; line-height: 1.15; text-wrap: balance; }
+p { margin: 0; }
+code { font-family: var(--mono); font-size: 0.84em; background: var(--sunk); padding: 0.08em 0.35em; border-radius: 4px; }
+.app { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+.top { display: flex; align-items: center; gap: 0.8rem; padding: 0.55rem clamp(0.85rem, 2.5vw, 1.5rem); border-bottom: 1px solid var(--line); background: var(--surface); }
+.brand { font-weight: 800; font-size: 1rem; white-space: nowrap; }
+.brand span { color: var(--route); }
+.top-title { color: var(--muted); font-size: 0.92rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.top-spacer { flex: 1; }
+.counter { font-family: var(--mono); font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.btn-ghost { font: 600 0.85rem var(--font); color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 0.4rem 0.75rem; cursor: pointer; }
+.btn-ghost:hover { border-color: var(--ink); }
+.main { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 0.85rem; padding: 0.85rem clamp(0.85rem, 2.5vw, 1.5rem); min-height: 0; overflow: hidden; }
+@media (min-width: 1000px) { .main { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 1.5rem; padding: 1.25rem 1.75rem; } }
+@media (max-height: 560px) { .app { height: auto; min-height: 100%; } .main, .lesson { overflow: visible; } }
+.stage { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; display: grid; place-items: center; padding: 1rem; min-height: 0; overflow: hidden; }
+.scene { display: block; width: 100%; height: auto; max-height: min(42vh, 380px); overflow: visible; }
+@media (min-width: 1000px) { .scene { height: 100%; max-height: 100%; } }
+.lesson { overflow-y: auto; min-height: 0; padding-right: 0.25rem; }
+.step { display: grid; gap: 0.85rem; align-content: start; animation: rise 0.35s ease both; }
+@keyframes rise { from { transform: translateY(8px); opacity: 0.4; } to { transform: none; opacity: 1; } }
+.kicker { display: flex; align-items: center; gap: 0.6rem; font-family: var(--mono); font-size: 0.74rem; color: var(--muted); }
+.chip { display: inline-flex; align-items: center; gap: 0.45rem; font-family: var(--mono); font-size: 0.72rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--ink); }
+.chip i { width: 0.8rem; height: 0.8rem; border-radius: 3px; display: inline-block; }
+.step h2 { font-size: clamp(1.35rem, 1.05rem + 1.1vw, 2rem); font-weight: 800; letter-spacing: -0.02em; }
+.lead { font-size: 1.02rem; max-width: 40rem; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.1rem; display: grid; gap: 0.6rem; }
+.card-title { font-family: var(--mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.ticks, .flow { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.45rem; }
+.ticks li { position: relative; padding-left: 1.3rem; }
+.ticks li::before { content: ""; position: absolute; left: 0; top: 0.5em; width: 0.6rem; height: 0.6rem; border-radius: 2px; background: var(--accent); }
+.ticks b, .flow b { font-weight: 700; }
+.flow { gap: 0.6rem; }
+.flow li { display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: 0.75rem; align-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 0.8rem 0.9rem; }
+.flow-n { width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 800; }
+.flow b { display: block; font-size: 1.05rem; }
+.flow p { color: var(--muted); font-size: 0.95rem; }
+.note { font-size: 0.88rem; color: var(--muted); }
+.code { position: relative; background: var(--code-bg); border-radius: 12px; min-width: 0; }
+.code pre { margin: 0; padding: 1.9rem 1.1rem 1rem; overflow-x: auto; font-family: var(--mono); font-size: 0.76rem; line-height: 1.55; color: var(--code-ink); }
+.code code { background: none; padding: 0; font-size: inherit; color: inherit; }
+.code-label { position: absolute; top: 0.55rem; right: 0.7rem; font-family: var(--mono); font-size: 0.64rem; color: var(--code-com); text-transform: uppercase; letter-spacing: 0.08em; }
+.tok-kw { color: var(--code-kw); } .tok-str { color: var(--code-str); } .tok-var { color: var(--code-var); }
+.tree { font-family: var(--mono); font-size: 0.82rem; line-height: 1.7; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 0.9rem 1rem; overflow-x: auto; }
+.tree div { white-space: nowrap; }
+.tree .t { color: var(--accent); font-weight: 700; }
+.tree .d { color: var(--muted); font-family: var(--font); font-size: 0.85rem; }
+.tree .i1 { padding-left: 1.2rem; } .tree .i2 { padding-left: 2.4rem; }
+.panel-mock { background: var(--black); color: #ece7de; border-radius: 12px; padding: 0.75rem; border: 1px solid #3a464b; }
+.pm-bar { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 0.9rem; padding: 0.1rem 0.25rem 0.6rem; }
+.pm-live { font-family: var(--mono); font-size: 0.66rem; color: #4dff9a; }
+.pm-live::before { content: ""; display: inline-block; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #4dff9a; margin-right: 0.35rem; animation: lg-blink 5s steps(1) infinite; }
+.pm-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 0.5rem; }
+.pm-tile { background: #2c383d; border-radius: 8px; padding: 0.6rem 0.7rem; display: grid; gap: 0.1rem; }
+.pm-tile span { font-size: 0.72rem; color: #a7b2b6; }
+.pm-tile b { font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pm-gauge { grid-row: span 3; justify-items: center; text-align: center; }
+.pm-gauge svg { width: 100%; max-width: 8rem; }
+.pm-state { display: flex; align-items: center; gap: 0.4rem; }
+.pm-state i { width: 0.65rem; height: 0.65rem; border-radius: 50%; background: #4dff9a; }
+.pm-state i.hot { background: #ff4d4f; box-shadow: 0 0 8px #ff4d4f; }
+.pm-cap { font-size: 0.8rem; color: var(--muted); }
+.map { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-size: 0.95rem; }
+.map th, .map td { text-align: left; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.map tr:last-child td { border-bottom: 0; }
+.map th { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); background: var(--sunk); }
+.map td:first-child { font-weight: 700; white-space: nowrap; }
+.sw { display: inline-block; width: 0.85rem; height: 0.85rem; border-radius: 3px; vertical-align: -0.1em; margin-right: 0.4rem; }
+.nav { display: flex; align-items: center; gap: 0.8rem; padding: 0.5rem clamp(0.85rem, 2.5vw, 1.5rem) calc(0.5rem + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); background: var(--surface); }
+.btn { font: 700 0.9rem var(--font); border-radius: 9px; padding: 0.5rem 1rem; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.btn-primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.dots { flex: 1; display: flex; gap: 0.35rem; justify-content: center; flex-wrap: wrap; }
+.dot { width: 1.8rem; height: 0.45rem; border-radius: 999px; border: 0; background: var(--line); cursor: pointer; padding: 0; }
+.dot[aria-current="step"] { background: var(--accent); }
+.dot:hover { background: var(--muted); }
+@media (max-width: 560px) { .top-title { display: none; } .dot { width: 1rem; } }
+
+/* The manual page: an overlay on the stage, shown on the Model step */
+.manual { position: absolute; left: 1rem; bottom: 1rem; width: min(330px, 60%); background: #fff; border: 1.5px solid #9fdfe6; border-radius: 8px; padding: 0.7rem 0.8rem; display: grid; grid-template-columns: 112px minmax(0, 1fr); grid-template-rows: auto auto auto; gap: 0.35rem 0.75rem; opacity: 0; transition: opacity 0.35s ease; pointer-events: none; font-size: 0.8rem; }
+.stage[data-focus="models"] .manual { opacity: 1; }
+.manual h3 { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; font-size: 0.78rem; font-weight: 800; color: #0b6d77; }
+.manual h3 b { font-size: 1.5rem; font-weight: 900; color: var(--ink); }
+.man-parts { border: 1.2px solid #0b6d77; border-radius: 4px; background: #f2fbfc; padding: 0.4rem 0.5rem; display: grid; gap: 0.2rem; }
+.man-parts small { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; color: #0b6d77; }
+.man-parts .row { display: flex; align-items: center; justify-content: space-between; }
+.man-parts svg { width: 62px; height: 34px; }
+.man-parts .cnt { font-weight: 800; font-size: 0.95rem; }
+.man-step { display: grid; align-content: center; gap: 0.15rem; }
+.man-step .arrow { color: var(--accent); font-weight: 800; }
+.man-step code { font-size: 0.8rem; font-weight: 700; background: none; padding: 0; }
+.man-step .ty { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); }
+.man-leg { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 0.15rem 0.6rem; font-size: 0.68rem; }
+.man-leg i { display: inline-block; width: 0.8rem; height: 0.6rem; border-radius: 2px; margin-right: 0.35rem; vertical-align: -0.05em; }
+.man-leg .lt { grid-column: 1 / -1; font-weight: 700; }
+
+/* Scene materials */
+.scene text { font-family: var(--font); }
+.f-top, .f-left, .f-right { stroke: rgba(6, 12, 14, 0.6); stroke-width: 0.9; stroke-linejoin: round; }
+.stud .s-top, .stud .s-side { stroke: rgba(6, 12, 14, 0.55); stroke-width: 0.7; }
+.m-plate .f-top { fill: #25353b; } .m-plate .f-left { fill: #1b282d; } .m-plate .f-right { fill: #141e22; }
+.m-plate .s-top { fill: #35464c; } .m-plate .s-side { fill: #1b282d; }
+.m-act .f-top { fill: #fb6107; } .m-act .f-left { fill: #c94e06; } .m-act .f-right { fill: #973a04; }
+.m-act .s-top { fill: #fd7e2f; } .m-act .s-side { fill: #c94e06; }
+.m-conn .f-top { fill: #7b2ff7; } .m-conn .f-left { fill: #6226c6; } .m-conn .f-right { fill: #4a1c94; }
+.m-conn .s-top { fill: #9152f9; } .m-conn .s-side { fill: #6226c6; }
+.m-rule .f-top { fill: #d99f01; } .m-rule .f-left { fill: #ae7f01; } .m-rule .f-right { fill: #825f01; }
+.m-yel .f-top, .m-yel .s-top { fill: #f5b301; } .m-yel .f-left, .m-yel .s-side { fill: #c48f01; } .m-yel .f-right { fill: #936b01; }
+.m-teal .f-top { fill: #12b5c6; } .m-teal .f-left { fill: #0e919e; } .m-teal .f-right { fill: #0b6d77; }
+.m-white .f-top { fill: #ece7de; } .m-white .f-left { fill: #bdb9b2; } .m-white .f-right { fill: #8e8b85; }
+.m-grey .f-top { fill: #a7b2b6; } .m-grey .f-left { fill: #868e92; } .m-grey .f-right { fill: #646b6d; }
+.m-lilac .f-top { fill: #b08cff; } .m-lilac .f-left { fill: #8d70cc; } .m-lilac .f-right { fill: #6a5499; }
+.m-box .f-top { fill: #3a464b; } .m-box .f-left { fill: #1f2629; } .m-box .f-right { fill: #141a1c; }
+.m-dark .f-top, .m-dark .s-top { fill: #3a464b; } .m-dark .f-left, .m-dark .s-side { fill: #2c383d; } .m-dark .f-right { fill: #1f2629; }
+.m-pole .s-side { fill: #a7b2b6; } .m-pole .s-top { fill: #c5ced1; }
+.m-trans .s-side { fill: rgba(255, 77, 79, 0.5); } .m-trans .s-top { fill: rgba(255, 150, 150, 0.75); }
+#lg-beacon.on .s-side { fill: #ff4d4f; } #lg-beacon.on .s-top { fill: #ffb3b3; } #lg-beacon.on { filter: drop-shadow(0 0 7px #ff4d4f); }
+.m-lime .s-side { fill: #4dff9a; } .m-lime .s-top { fill: #b8ffd6; }
+.m-ant .s-side { fill: rgba(176, 140, 255, 0.65); } .m-ant .s-top { fill: rgba(216, 196, 255, 0.9); }
+#lg-hb { animation: lg-blink 5s steps(1) infinite; }
+@keyframes lg-blink { 0%, 6% { opacity: 1; } 7%, 100% { opacity: 0.35; } }
+.b-label { font-family: var(--mono); font-size: 10px; font-weight: 700; fill: #ffffff; }
+.b-label.dark { fill: #1f2629; }
+.mf .b-label { font-size: 9.5px; }
+.ant-whip { stroke: #2c383d; stroke-width: 2.4; stroke-linecap: round; } .ant-tip { fill: #2c383d; }
+.wave { fill: none; stroke: #7b2ff7; stroke-width: 2; stroke-linecap: round; }
+.icon-fill { fill: #ffffff; stroke: #646b6d; stroke-width: 1.5; transition: fill 0.6s ease; }
+#sky-cloud.rainy { fill: #c5ced1; }
+.sky-sun circle { fill: #f5b301; stroke: #c48f01; stroke-width: 1.2; } .sky-sun line { stroke: #f5b301; stroke-width: 2; stroke-linecap: round; }
+.sky-rain line { stroke: #4fa3ff; stroke-width: 2; stroke-linecap: round; }
+.sky-wind path { fill: none; stroke: #646b6d; stroke-width: 2; stroke-linecap: round; }
+.sky-sun, .sky-rain, .sky-wind { transition: opacity 0.6s ease; opacity: 0; }
+.sky-sun.on, .sky-rain.on, .sky-wind.on { opacity: 1; }
+.icon-label { font-size: 12px; font-weight: 700; fill: #1f2629; }
+.icon-sub { font-size: 10.5px; fill: #4f5a6a; font-family: var(--mono); }
+.box-print { fill: #ffffff; font-weight: 800; }
+.art-bg { fill: #0f1416; } .art-tile { fill: #2c383d; }
+.art-ink { fill: #ece7de; font-weight: 700; } .art-muted { fill: #a7b2b6; }
+.art-track { fill: none; stroke: #3a464b; stroke-width: 6; stroke-linecap: round; }
+.art-val { fill: none; stroke: #fb6107; stroke-width: 6; stroke-linecap: round; }
+.art-good { fill: #4dff9a; } .art-hot { fill: #ff4d4f; }
+
+/* Spotlight */
+.scene [data-part] { transition: opacity 0.35s ease; }
+.scene:not([data-focus="all"]) [data-part] { opacity: 0.14; }
+.scene[data-focus="broker"] [data-part~="broker"],
+.scene[data-focus="topics"] [data-part~="topics"],
+.scene[data-focus="actions"] [data-part~="actions"],
+.scene[data-focus="routes"] [data-part~="routes"],
+.scene[data-focus="models"] [data-part~="models"],
+.scene[data-focus="rules"] [data-part~="rules"],
+.scene[data-focus="panels"] [data-part~="panels"] { opacity: 1; }
+.scene[data-focus="topics"] [data-part~="plate"] { opacity: 1; }
+.scene[data-focus="actions"] [data-part~="plate"],
+.scene[data-focus="routes"] [data-part~="plate"],
+.scene[data-focus="rules"] [data-part~="plate"] { opacity: 0.4; }
+.scene [data-part].lg-off, .scene [data-mf].lg-off { visibility: hidden; }
+.callout { opacity: 0; transition: opacity 0.35s ease; pointer-events: none; }
+.scene[data-focus="all"][data-flow="on"] .callout[data-show~="flow"],
+.scene[data-thing="on"] .callout[data-show~="thing"],
+.scene[data-focus="broker"] .callout[data-show~="broker"],
+.scene[data-focus="topics"] .callout[data-show~="topics"],
+.scene[data-focus="actions"] .callout[data-show~="actions"],
+.scene[data-focus="routes"] .callout[data-show~="routes"],
+.scene[data-focus="models"] .callout[data-show~="models"],
+.scene[data-focus="rules"] .callout[data-show~="rules"],
+.scene[data-focus="panels"] .callout[data-show~="panels"] { opacity: 1; }
+.tag-bg { fill: #ffffff; stroke: #1f2629; stroke-width: 1.25; }
+.tag-text { font-size: 12.5px; font-weight: 700; fill: #1f2629; }
+.tag-mono { font-family: var(--mono); font-size: 11px; font-weight: 700; fill: #1f2629; }
+.lead-line { stroke: #1f2629; stroke-width: 1.25; fill: none; } .lead-dot { fill: #1f2629; }
+.ring { fill: none; stroke: #f5b301; stroke-width: 3; }
+.zone { fill: rgba(245, 179, 1, 0.3); stroke: #d99f01; stroke-width: 1.5; stroke-dasharray: 5 4; }
+.lock-body { fill: #f5b301; stroke: #825f01; stroke-width: 1.5; } .lock-shackle { fill: none; stroke: #825f01; stroke-width: 3; stroke-linecap: round; }
+.thing-face { fill: rgba(123, 47, 247, 0.07); stroke: #7b2ff7; stroke-width: 2; stroke-dasharray: 7 5; stroke-linejoin: round; }
+.thing-edge { stroke: #7b2ff7; stroke-width: 1.5; stroke-dasharray: 4 5; opacity: 0.55; }
+.badge-c { fill: #fb6107; stroke: #ffffff; stroke-width: 2.5; } .badge-n { fill: #ffffff; font-weight: 800; font-size: 14px; }
+.badge-t { font-size: 13px; font-weight: 800; fill: #c94e06; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; stroke-linejoin: round; }
+.lg-pk circle { fill: #fb6107; stroke: #fff; stroke-width: 1.8; } .lg-pk .lg-glow { fill: #fd7e2f; opacity: .4; stroke: none; }
+.lg-pk.lg-json circle { fill: #f5b301; } .lg-pk.lg-json .lg-glow { fill: #f5b301; }
+.lg-pk.lg-model circle { fill: #12b5c6; } .lg-pk.lg-model .lg-glow { fill: #4fd6e4; }
+.lg-pk.lg-hot circle { fill: #ff4d4f; } .lg-pk.lg-hot .lg-glow { fill: #ff4d4f; opacity: .5; }
+.lg-pk text { font-family: var(--mono); font-size: 11px; font-weight: 700; fill: #1f2629; paint-order: stroke; stroke: #fff; stroke-width: 3px; }
+.lg-doc path { fill: #ffffff; stroke: #12b5c6; stroke-width: 1.6; stroke-linejoin: round; } .lg-doc line { stroke: #12b5c6; stroke-width: 1.4; stroke-linecap: round; }
+.lg-bit { font-family: var(--mono); font-size: 11px; font-weight: 700; fill: #b08cff; paint-order: stroke; stroke: #ffffff; stroke-width: 2px; }
+.lg-mail rect { fill: #ffffff; stroke: #7b2ff7; stroke-width: 1.6; } .lg-mail path { fill: none; stroke: #7b2ff7; stroke-width: 1.4; stroke-linejoin: round; } .lg-mail circle { fill: #ff4d4f; stroke: none; }
+.lg-alert rect { fill: #ff4d4f; stroke: #fff; stroke-width: 2; } .lg-alert text { fill: #fff; font-weight: 800; font-size: 12px; letter-spacing: .5px; }
+@media (prefers-reduced-motion: reduce) { .step { animation: none; } .scene [data-part], .callout, .manual { transition: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <span class="brand">Coreflux <span>Training</span></span>
+    <span class="top-title">The weather station, piece by piece</span>
+    <span class="top-spacer"></span>
+    <span class="counter" id="counter">1 / 11</span>
+    <button class="btn-ghost" type="button" id="fs">Full screen</button>
+  </header>
+  <main class="main">
+    <div class="stage" id="stage" data-focus="all">
+      <svg class="scene" id="scene" data-focus="all" data-flow="off" data-thing="off" role="img" aria-labelledby="scene-title">
+        <title id="scene-title">A brick model of the Coreflux weather station: an antenna on a stack of Action and Model bricks</title>
+      </svg>
+      <aside class="manual" id="lg-manual" aria-hidden="true">
+        <h3><span>MODEL WeatherReading</span><b id="lg-mstep">1</b></h3>
+        <div class="man-parts"><small>PARTS NEEDED</small><div class="row"><svg id="lg-mpart" viewBox="0 0 62 34" aria-hidden="true"></svg><span class="cnt" id="lg-mcount">1x</span></div></div>
+        <div class="man-step"><span class="arrow">→</span><code id="lg-mfield">temperature_c</code><span class="ty" id="lg-mtype">ADD DOUBLE</span></div>
+        <div class="man-leg"><span class="lt">Brick color = field type</span><span><i style="background:#12b5c6"></i>number · DOUBLE</span><span><i style="background:#ece7de;border:1px solid #c9cfd6"></i>text · STRING</span><span><i style="background:#a7b2b6"></i>whole number · INT</span><span><i style="background:#b08cff"></i>true/false · BOOL</span></div>
+      </aside>
+    </div>
+    <div class="lesson" id="lesson" aria-live="polite">
+
+      <section class="step" data-focus="all" data-flow="off" data-name="The finished weather station">
+        <p class="kicker"><span class="chip">Where this ends</span>Day 1</p>
+        <h2>A live weather station, from one Broker</h2>
+        <p class="lead">Coreflux asks a weather service for this site, turns the answer into one reading, raises a heat alert when it gets too hot, keeps the history, emails the team and shows it on a live dashboard.</p>
+        <div class="panel-mock" aria-label="Campus Weather dashboard, live">
+          <div class="pm-bar"><span>Campus Weather</span><span class="pm-live">LIVE</span></div>
+          <div class="pm-grid">
+            <div class="pm-tile pm-gauge">
+              <svg viewBox="0 0 100 60" aria-hidden="true"><path d="M16 50 A34 34 0 0 1 84 50" fill="none" stroke="#3a464b" stroke-width="6" stroke-linecap="round"/><path id="pm-arc" d="M16 50 A34 34 0 0 1 59.5 17.4" fill="none" stroke="#fb6107" stroke-width="6" stroke-linecap="round"/></svg>
+              <b id="pm-f">18.4 °C</b><span>Temperature</span>
+            </div>
+            <div class="pm-tile"><span>Fahrenheit</span><b id="pm-c">65.1 °F</b></div>
+            <div class="pm-tile"><span>Wind</span><b id="pm-w">12.6 km/h</b></div>
+            <div class="pm-tile"><span>Heat alert</span><b class="pm-state"><i id="pm-dot"></i><span id="pm-heat">Off</span></b></div>
+          </div>
+        </div>
+        <p class="pm-cap">The dashboard at the end of Day 1. It follows the readings moving through the model on the left.</p>
+        <div class="card">
+          <p class="card-title">What it does</p>
+          <ul class="ticks">
+            <li>Asks a weather API for this site <b>every 5 minutes</b></li>
+            <li>Converts <b>°C to °F</b> and <b>km/h to mph</b></li>
+            <li>Raises a <b>heat alert</b> against a limit you can change live</li>
+            <li>Keeps the <b>history</b> and <b>emails</b> the team</li>
+            <li>Shows it on a <b>live dashboard</b></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="step" data-focus="all" data-flow="on" data-name="What Coreflux brings" hidden>
+        <p class="kicker"><span class="chip">The path</span>Four moves</p>
+        <h2>Get it, hold it, work on it, send it</h2>
+        <p class="lead">The antenna pulls the weather in, every reading lands on a stud, the bricks convert and decide inside the Broker, and the result goes to the box, the file and the mail.</p>
+        <ol class="flow">
+          <li><span class="flow-n">1</span><div><b>Get</b><p>A Connector calls the weather API. The same kind of Connector reads a PLC.</p></div></li>
+          <li><span class="flow-n">2</span><div><b>Centralize</b><p>Every reading lands on one Broker, on topics laid out like an address.</p></div></li>
+          <li><span class="flow-n">3</span><div><b>Process</b><p>Actions and Models convert the units and decide, inside the Broker.</p></div></li>
+          <li><span class="flow-n">4</span><div><b>Send</b><p>Connectors and Panels deliver it: a dashboard, a file, an email.</p></div></li>
+        </ol>
+      </section>
+
+      <section class="step" data-focus="broker" data-name="The Broker" hidden>
+        <p class="kicker"><span class="chip"><i style="background:#25353b"></i>The Broker</span>Piece 1 of 7</p>
+        <h2>The Broker is the baseplate</h2>
+        <p class="lead">Every piece you deploy sticks to it, and the LoT you write runs on it. Devices, apps and your logic all connect here.</p>
+        <div class="card">
+          <p class="card-title">On the training station</p>
+          <ul class="ticks">
+            <li>One Broker per station</li>
+            <li>The <b>HUB</b> at <code>http://localhost:3000</code> is the window onto it</li>
+            <li>Broker, HUB and Mailpit (a test inbox) start together</li>
+          </ul>
+        </div>
+        <div class="code"><span class="code-label">terminal</span><pre><code>cd project&#10;docker compose up -d</code></pre></div>
+        <p class="note">In class this is already running when you sit down.</p>
+      </section>
+
+      <section class="step" data-focus="topics" data-name="Topics" hidden>
+        <p class="kicker"><span class="chip"><i style="background:#35464c"></i>Topics</span>Piece 2 of 7</p>
+        <h2>Topics are the studs</h2>
+        <p class="lead">A stud is where a piece clicks on, and the same stud is how two pieces connect. One piece publishes to a topic, and every piece listening on that topic picks it up. The publisher never needs to know who is listening.</p>
+        <div class="tree" aria-label="Topic tree of the weather station">
+          <div><span class="t">campus/</span></div>
+          <div class="i1"><span class="t">weather/</span></div>
+          <div class="i2"><span class="t">request</span> <span class="d">RequestWeather asks for new data</span></div>
+          <div class="i2"><span class="t">raw</span> <span class="d">the weather API answer lands here</span></div>
+          <div class="i2"><span class="t">reading</span> <span class="d">the clean, converted reading</span></div>
+          <div class="i2"><span class="t">errors</span> <span class="d">weather API errors, instead of a reading</span></div>
+          <div class="i2"><span class="t">alerts/heat_active</span> <span class="d">HeatAlert's verdict, on or off</span></div>
+          <div class="i2"><span class="t">alerts/heat</span> <span class="d">the reading that starts a heat episode; the email goes from here</span></div>
+          <div><span class="t">config/</span></div>
+          <div class="i1"><span class="t">heat_limit_c</span> <span class="d">the limit an operator can change</span></div>
+        </div>
+        <p>The studs sit in a grid you read like an address. That grid is the <b>Unified Namespace</b> (UNS). <code>campus/weather/+</code> is one level. <code>campus/#</code> is everything below it.</p>
+      </section>
+
+      <section class="step" data-focus="actions" data-name="Actions" hidden>
+        <p class="kicker"><span class="chip"><i style="background:#fb6107"></i>Actions</span>Piece 3 of 7</p>
+        <h2>An Action is one brick, one job</h2>
+        <p class="lead">It starts on a trigger: a timer, a message on a topic, or a call from another Action. The weather station uses four.</p>
+        <div class="card">
+          <p class="card-title">The four Actions</p>
+          <ul class="ticks">
+            <li><b>RequestWeather</b> runs every 5 minutes and asks for new weather</li>
+            <li><b>ProcessWeather</b> runs when the raw answer arrives and builds the reading</li>
+            <li><b>HeatAlert</b> reads each reading and decides; the beacon lights on a heat alert</li>
+            <li><b>Heartbeat</b> runs every 5 seconds so you can see the Broker is alive</li>
+          </ul>
+        </div>
+        <div class="code"><span class="code-label">LoT</span><pre><code class="lot">DEFINE ACTION RequestWeather
+ON EVERY 5 MINUTES DO
+    PUBLISH TOPIC "campus/weather/request" WITH "poll"
+
+DEFINE ACTION HeatAlert
+ON TOPIC "campus/weather/reading" DO
+    SET "temp_c" WITH (GET JSON "temperature_c" IN PAYLOAD AS DOUBLE)
+    SET "limit_raw" WITH GET TOPIC "config/heat_limit_c"
+    SET "was" WITH GET TOPIC "campus/weather/alerts/heat_active"
+    IF {limit_raw} == EMPTY THEN
+        PUBLISH TOPIC "campus/weather/alerts/heat_active" WITH "off"
+    ELSE
+        SET "heat_limit" WITH (GET TOPIC "config/heat_limit_c" AS DOUBLE)
+        IF {temp_c} &gt; {heat_limit} THEN
+            IF {was} != "on" THEN
+                PUBLISH TOPIC "campus/weather/alerts/heat" WITH PAYLOAD
+            PUBLISH TOPIC "campus/weather/alerts/heat_active" WITH "on"
+        ELSE
+            PUBLISH TOPIC "campus/weather/alerts/heat_active" WITH "off"</code></pre></div>
+        <p class="note">The limit lives on a topic, so an operator changes it live; while it is empty the alert stays off. The email goes out only when the state turns from off to on. RequestWeather only says <code>poll</code>: the Connector knows the site. Heartbeat is <code>ON EVERY 5 SECONDS DO</code>. Each Action is its own cell, in the notebook of the lab that builds it (<code>project/01-heartbeat.lotnb</code> to <code>04-heat-alert-history-email.lotnb</code>).</p>
+      </section>
+
+      <section class="step" data-focus="routes" data-name="Connectors" hidden>
+        <p class="kicker"><span class="chip"><i style="background:#7b2ff7"></i>Connectors</span>Piece 4 of 7</p>
+        <h2>A Connector is the piece with an antenna</h2>
+        <p class="lead">It reaches outside the Broker: a web API, a file, email, a PLC, a database. The weather station uses three.</p>
+        <div class="card">
+          <p class="card-title">The three Connectors</p>
+          <ul class="ticks">
+            <li><b>Weather API</b>, REST: the antenna on top of the station, data comes in</li>
+            <li><b>History</b>, file storage: the cylinder, every reading is a line in a CSV file</li>
+            <li><b>Email</b>: the mailbox, the team hears about a heat alert</li>
+          </ul>
+        </div>
+        <div class="code"><span class="code-label">LoT · Broker GA_BROKER_TAG</span><pre><code class="lot">DEFINE CONNECTOR CampusWeather WITH TYPE REST_API
+    ADD REST_API_CONFIG
+        WITH BASE_ADDRESS "https://api.open-meteo.com"
+        WITH ENABLE_CLIENT "true"
+        WITH USE_SSL "true"
+    ADD EVENT GetCurrentWeather
+        WITH SOURCE_TOPIC "campus/weather/request"
+        WITH DESTINATION_TOPIC "campus/weather/raw"
+        WITH METHOD "GET"
+        WITH ENDPOINT "/v1/forecast?latitude={env.WEATHER_LAT}&amp;longitude={env.WEATHER_LON}&amp;current=temperature_2m,wind_speed_10m&amp;wind_speed_unit=kmh"</code></pre></div>
+        <p class="note">The site comes from the <code>WEATHER_LAT</code> and <code>WEATHER_LON</code> environment variables, so RequestWeather only has to say <code>poll</code>. The history Connector writes a CSV file, and the email Connector sends to Mailpit, the test inbox in the lesson's Docker setup. <code>DEFINE ROUTE</code> is the older spelling of <code>DEFINE CONNECTOR</code>; both work.</p>
+      </section>
+
+      <section class="step" data-focus="models" data-name="Models" hidden>
+        <p class="kicker"><span class="chip"><i style="background:#12b5c6"></i>Models</span>Piece 5 of 7</p>
+        <h2>A Model is one brick per field</h2>
+        <p class="lead">The manual says which brick comes next. Each brick is one field and the color is the type, so every reading has the same shape.</p>
+        <div class="card">
+          <p class="card-title">WeatherReading, step by step</p>
+          <ol class="ticks">
+            <li><code>temperature_c</code> and <code>temperature_f</code>, numbers</li>
+            <li><code>wind_kmh</code> and <code>wind_mph</code>, numbers</li>
+            <li><code>timestamp</code>, text</li>
+            <li>ProcessWeather fills it and publishes it as one document</li>
+          </ol>
+        </div>
+        <div class="code"><span class="code-label">LoT</span><pre><code class="lot">DEFINE MODEL WeatherReading COLLAPSED
+    ADD DOUBLE "temperature_c"
+    ADD DOUBLE "temperature_f"
+    ADD DOUBLE "wind_kmh"
+    ADD DOUBLE "wind_mph"
+    ADD STRING "timestamp"
+
+PUBLISH MODEL WeatherReading TO "campus/weather/reading" WITH
+    temperature_c = {temp_c}
+    temperature_f = {temp_f}
+    wind_kmh = {wind_kmh}
+    wind_mph = {wind_mph}
+    timestamp = TIMESTAMP "UTC"</code></pre></div>
+        <p class="note"><code>COLLAPSED</code> publishes when an Action asks, with <code>PUBLISH MODEL</code>. The full Action is ProcessWeather, in the project folder.</p>
+      </section>
+
+      <section class="step" data-focus="rules" data-name="Rules" hidden>
+        <p class="kicker"><span class="chip"><i style="background:#d99f01"></i>Rules</span>Piece 6 of 7</p>
+        <h2>Rules are the building frame</h2>
+        <p class="lead">The frame holds the build to the plan and keeps pieces off the studs they do not belong on. A Rule decides who may publish or subscribe on which topics.</p>
+        <div class="card">
+          <p class="card-title">In the weather station</p>
+          <ul class="ticks">
+            <li>Everyone can <b>read</b> the weather</li>
+            <li>Only the <b>operators</b> group changes <code>config/heat_limit_c</code></li>
+            <li>A publish from anyone else is refused by the Broker</li>
+          </ul>
+        </div>
+        <div class="code"><span class="code-label">LoT</span><pre><code class="lot">DEFINE RULE ProtectWeatherConfig WITH PRIORITY 100 FOR Publish TO TOPIC "config/#"
+    IF USER IN GROUP "operators" OR USER IS "root" THEN
+        ALLOW
+    ELSE
+        DENY</code></pre></div>
+        <p class="note">Priority 100 is the strongest number you can write. Writing your own Rules needs a licence: the event trial licence from the organisers (one seat per broker), or Growth or Enterprise; on Community Edition the Broker refuses the Rule. Deploy it with Run Cell or <code>-addRule</code>. The Broker's own rules always apply.</p>
+      </section>
+
+      <section class="step" data-focus="panels" data-name="Panels" hidden>
+        <p class="kicker"><span class="chip"><i style="background:#1f2629"></i>Panels</span>Piece 7 of 7</p>
+        <h2>A Panel is the box</h2>
+        <p class="lead">The box shows the finished build. A Panel is the live screen people look at: gauges, values, the heat indicator, each bound to a topic. The same screen can be built in HUB Dashboards.</p>
+        <div class="code"><span class="code-label">LoT</span><pre><code class="lot">DEFINE PANEL CampusWeather
+    WITH VISIBILITY PUBLIC
+    WITH STATE PUBLISHED
+    WITH TITLE "Campus Weather"
+    WITH LAYOUT "grid" COLUMNS 4 ROWS 1
+
+    ADD COMPONENT "TempGauge" WITH TYPE "gauge"
+        AT COLUMN 1 ROW 1
+        SET LABEL "Temperature"
+        SET RANGE FROM -20 TO 45
+        SET UNIT "°C"
+        BIND VALUE TO TOPIC "campus/weather/reading" WITH JSON_PATH "temperature_c"</code></pre></div>
+        <p class="note">The Panel in <code>project/06-panel.lotnb</code> adds the Fahrenheit value, the wind in km/h and the heat state, one component each.</p>
+      </section>
+
+      <section class="step" data-focus="all" data-flow="off" data-replay="on" data-name="Put together" hidden>
+        <p class="kicker"><span class="chip">Put together</span>Recap</p>
+        <h2>Seven pieces, one weather station</h2>
+        <table class="map">
+          <thead><tr><th scope="col">Coreflux</th><th scope="col">The piece</th><th scope="col">In the weather station</th></tr></thead>
+          <tbody>
+            <tr><td><span class="sw" style="background:#25353b"></span>Broker</td><td>The baseplate</td><td>Everything sticks to it. LoT runs on it.</td></tr>
+            <tr><td><span class="sw" style="background:#35464c"></span>Topics</td><td>The studs, where pieces connect</td><td><code>campus/weather/reading</code> and the rest</td></tr>
+            <tr><td><span class="sw" style="background:#fb6107"></span>Actions</td><td>The bricks</td><td>RequestWeather, ProcessWeather, HeatAlert, Heartbeat</td></tr>
+            <tr><td><span class="sw" style="background:#7b2ff7"></span>Connectors</td><td>The antenna pieces</td><td>Weather API in. The cylinder and the mailbox out.</td></tr>
+            <tr><td><span class="sw" style="background:#12b5c6"></span>Models</td><td>The field bricks, from the manual</td><td>WeatherReading: five bricks, color is the type</td></tr>
+            <tr><td><span class="sw" style="background:#d99f01"></span>Rules</td><td>The building frame</td><td>Only operators change the heat limit</td></tr>
+            <tr><td><span class="sw" style="background:#1f2629"></span>Panels</td><td>The box</td><td>Campus Weather</td></tr>
+          </tbody>
+        </table>
+        <div class="card">
+          <p class="card-title">Lab 1</p>
+          <p><b>Your first brick.</b> The Heartbeat Action in <code>project/01-heartbeat.lotnb</code>, watched live in the HUB. It publishes every 5 seconds.</p>
+        </div>
+      </section>
+
+      <section class="step" data-focus="all" data-flow="off" data-thing="on" data-name="One Thing" hidden>
+        <p class="kicker"><span class="chip"><i style="background:#7b2ff7"></i>DEFINE THING</span>The recipe</p>
+        <h2>The whole station is one Thing</h2>
+        <p class="lead">The antenna, the RequestWeather, ProcessWeather and HeatAlert bricks and the five Model bricks come off the plate together. In LoT that assembled build is a <b>Thing</b>: the recipe is written once as a template, and each site is one line that fills in the blanks.</p>
+        <div class="code"><span class="code-label">LoT · Broker GA_BROKER_TAG</span><pre><code class="lot">DEFINE THING TEMPLATE WeatherStation
+    WITH PARAM lat
+    WITH PARAM lon
+    WITH CONNECTOR Weather WITH TYPE REST_API
+        ADD REST_API_CONFIG
+            WITH BASE_ADDRESS "https://api.open-meteo.com"
+        ADD EVENT GetCurrentWeather
+            WITH SOURCE_TOPIC "{{path}}/request"
+            WITH DESTINATION_TOPIC "{{path}}/raw"
+            WITH ENDPOINT "/v1/forecast?latitude={{lat}}&amp;longitude={{lon}}&amp;current=temperature_2m,wind_speed_10m"
+    WITH MODEL Reading COLLAPSED
+        ADD DOUBLE "temperature_c"
+        ADD DOUBLE "temperature_f"
+        ADD STRING "timestamp"
+    WITH ACTION Request
+    ON EVERY 5 MINUTES DO
+        PUBLISH TOPIC "{{path}}/request" WITH "poll"
+    WITH ACTION Process
+    ON TOPIC "{{path}}/raw" DO
+        PUBLISH MODEL Reading TO "{{path}}/reading" WITH
+            temperature_c = (GET JSON "current.temperature_2m" IN PAYLOAD AS DOUBLE)
+
+DEFINE THING campus OF WeatherStation
+    WITH PARAM lat "40.7128"
+    WITH PARAM lon "-74.0060"</code></pre></div>
+        <p class="note">One template, one line per site, and the Broker owns every piece it expands. <code>DEFINE THING</code> is new in recent Broker releases; 2.14 and earlier do not have it. Day 1 builds the same station piece by piece.</p>
+      </section>
+    </div>
+  </main>
+  <nav class="nav" aria-label="Lesson steps">
+    <button class="btn" type="button" id="prev">Back</button>
+    <div class="dots" id="dots"></div>
+    <button class="btn btn-primary" type="button" id="next">Next</button>
+  </nav>
+</div>
+<script>
+(function () {
+  /* ---------- Isometric brick engine ---------- */
+  var U = 18, C = Math.cos(Math.PI / 6), S = 0.5;
+  var BH = 1.2 * U, PH = 0.4 * U, SH = 0.22 * U, SR = 0.3;
+  var RX = SR * U * Math.SQRT2 * C, RY = SR * U * Math.SQRT2 * S;
+  var bounds = { x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9 };
+  function grow(x, y) { bounds.x0 = Math.min(bounds.x0, x); bounds.y0 = Math.min(bounds.y0, y); bounds.x1 = Math.max(bounds.x1, x); bounds.y1 = Math.max(bounds.y1, y); }
+  function P(x, y, z) { var p = [(x - y) * U * C, (x + y) * U * S - (z || 0)]; grow(p[0], p[1]); return p; }
+  function Q(x, y, z) { return [(x - y) * U * C, (x + y) * U * S - (z || 0)]; }
+  function f(n) { return n.toFixed(1); }
+  function pt(a) { return f(a[0]) + ',' + f(a[1]); }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function poly(pts, cls) { return '<polygon class="' + cls + '" points="' + pts.map(pt).join(' ') + '"/>'; }
+  function cyl(x, y, z, r, h, cls) {
+    var c = P(x, y, z), rx = r * U * Math.SQRT2 * C, ry = r * U * Math.SQRT2 * S, cx = c[0], cy = c[1];
+    grow(cx - rx, cy - h - ry); grow(cx + rx, cy + ry);
+    return '<g class="stud ' + (cls || '') + '"><path class="s-side" d="M' + f(cx - rx) + ' ' + f(cy - h) + 'L' + f(cx - rx) + ' ' + f(cy) + 'A' + f(rx) + ' ' + f(ry) + ' 0 0 0 ' + f(cx + rx) + ' ' + f(cy) + 'L' + f(cx + rx) + ' ' + f(cy - h) + 'Z"/><ellipse class="s-top" cx="' + f(cx) + '" cy="' + f(cy - h) + '" rx="' + f(rx) + '" ry="' + f(ry) + '"/></g>';
+  }
+  function face(x, y, d, zt, inner) { var org = P(x, y + d, zt); return '<g transform="matrix(' + C + ',' + S + ',0,1,' + f(org[0]) + ',' + f(org[1]) + ')">' + inner + '</g>'; }
+  function box(o) {
+    var x = o.x, y = o.y, z = o.z || 0, w = o.w, d = o.d, h = o.h, zt = z + h, s = '';
+    s += poly([P(x, y + d, z), P(x + w, y + d, z), P(x + w, y + d, zt), P(x, y + d, zt)], 'f-left');
+    s += poly([P(x + w, y, z), P(x + w, y + d, z), P(x + w, y + d, zt), P(x + w, y, zt)], 'f-right');
+    s += poly([P(x, y, zt), P(x + w, y, zt), P(x + w, y + d, zt), P(x, y + d, zt)], 'f-top');
+    if (o.studs) {
+      var list = [];
+      for (var i = 0; i < w; i++) for (var j = 0; j < d; j++) list.push([i, j]);
+      list.sort(function (a, b) { return (a[0] + a[1]) - (b[0] + b[1]); });
+      list.forEach(function (c) { s += cyl(x + c[0] + 0.5, y + c[1] + 0.5, zt, SR, SH); });
+    }
+    if (o.label) s += face(x, y, d, zt, '<text class="b-label' + (o.dark ? ' dark' : '') + '" x="' + f(w * U / 2) + '" y="' + f(h / 2 + 3.5) + '" text-anchor="middle">' + esc(o.label) + '</text>');
+    return s;
+  }
+  function slope(o) {
+    var x = o.x, y = o.y, z = o.z || 0, w = o.w, d = o.d, h = o.h, lip = o.lip || h * 0.25, s = '';
+    s += poly([P(x, y + d, z), P(x + w, y + d, z), P(x + w, y + d, z + lip), P(x, y + d, z + lip)], 'f-left');
+    s += poly([P(x + w, y, z), P(x + w, y + d, z), P(x + w, y + d, z + lip), P(x + w, y, z + h)], 'f-right');
+    s += poly([P(x, y, z + h), P(x + w, y, z + h), P(x + w, y + d, z + lip), P(x, y + d, z + lip)], 'f-top');
+    return s;
+  }
+  function whip(x, y, z0, z1) {
+    var a = P(x, y, z0), b = P(x, y, z1);
+    grow(b[0] - 6, b[1] - 6);
+    return '<path class="ant-whip" d="M' + pt(a) + 'L' + pt(b) + '"/><circle class="ant-tip" cx="' + f(b[0]) + '" cy="' + f(b[1]) + '" r="3.5"/>';
+  }
+  function G(part, mat, inner, extra) { return '<g data-part="' + part + '"' + (mat ? ' class="' + mat + '"' : '') + (extra || '') + '>' + inner + '</g>'; }
+  function arc(cx, cy, r, k) {
+    k = Math.max(0.01, Math.min(0.99, k));
+    var a = Math.PI * (1 - k), x = cx + r * Math.cos(a), y = cy - r * Math.sin(a);
+    return 'M' + (cx - r) + ' ' + cy + ' A' + r + ' ' + r + ' 0 0 1 ' + x.toFixed(1) + ' ' + y.toFixed(1);
+  }
+  function fk(fahr) { return (fahr + 4) / 117; }
+
+  /* ---------- The scene ---------- */
+  var o = [], Z1 = PH, Z2 = PH + BH;
+  var SX = 4, SY = 3, SW = 5, SD = 2;
+  var FP = [[SX, SY, 6, SD], [1, 8, 3, 2], [11, 8, 2, 2], [6, 9, 2, 2]];
+  var TOP = { request: [2.5, 4.5], raw: [4.5, 6.5], reading: [8.5, 6.5], limit: [13.5, 6.5] };
+  var covered = {};
+  FP.forEach(function (b) { for (var i = 0; i < b[2]; i++) for (var j = 0; j < b[3]; j++) covered[(b[0] + i) + ',' + (b[1] + j)] = 1; });
+  var RH = 0.62 * BH;
+
+  // The box (Panels), standing right behind the plate, centred on it
+  var BX = 8.5, BY = -4.2, BW = 7.5, BD = 2.6, BZ = 8.6 * U;
+  (function () {
+    var s = box({ x: BX, y: BY, w: BW, d: BD, h: BZ }), Wd = BW * U, art = '';
+    art += '<text class="box-print" x="10" y="18" font-size="9.5" letter-spacing="1.2">COREFLUX · PANEL</text>';
+    art += '<text class="box-print" x="10" y="40" font-size="14" textLength="' + (Wd - 22) + '" lengthAdjust="spacingAndGlyphs">Campus Weather</text>';
+    art += '<rect class="art-bg" x="10" y="50" width="' + (Wd - 20) + '" height="88" rx="4"/>';
+    art += '<rect class="art-tile" x="15" y="55" width="50" height="78" rx="3"/>';
+    art += '<path class="art-track" d="' + arc(40, 100, 17, 0.99) + '"/><path id="lg-arc" class="art-val" d="' + arc(40, 100, 17, fk(65.1)) + '"/>';
+    art += '<text id="lg-sf" class="art-ink" x="40" y="122" font-size="10" text-anchor="middle">18.4 °C</text>';
+    art += '<rect class="art-tile" x="69" y="55" width="' + (Wd - 84) + '" height="24" rx="3"/><text class="art-muted" x="73" y="64" font-size="6.5">Fahrenheit</text><text id="lg-st" class="art-ink" x="73" y="75" font-size="9.5">65.1 °F</text>';
+    art += '<rect class="art-tile" x="69" y="82" width="' + (Wd - 84) + '" height="24" rx="3"/><text class="art-muted" x="73" y="91" font-size="6.5">Wind</text><text id="lg-sw" class="art-ink" x="73" y="102" font-size="9.5">12.6 km/h</text>';
+    art += '<rect class="art-tile" x="69" y="109" width="' + (Wd - 84) + '" height="24" rx="3"/><text class="art-muted" x="73" y="118" font-size="6.5">Heat alert</text><circle id="lg-sa" class="art-good" cx="76" cy="126" r="2.6"/><text id="lg-sat" class="art-ink" x="82" y="129" font-size="9">Off</text>';
+    art += '<text class="box-print" x="10" y="150" font-size="9" opacity="0.85">4 components · live</text>';
+    s += face(BX, BY, BD, BZ, art);
+    var r = P(BX + BW, BY + BD, BZ);
+    s += '<g transform="matrix(' + C + ',' + (-S) + ',0,1,' + f(r[0]) + ',' + f(r[1]) + ')"><text class="box-print" x="23" y="26" font-size="9" text-anchor="middle" opacity="0.9">BOX</text></g>';
+    o.push([-5, G('panels', 'm-box', s)]);
+  })();
+
+  // Frame rails (Rules), back
+  o.push([-1, G('rules', 'm-rule', box({ x: -0.7, y: -0.7, w: 17.4, d: 0.6, h: RH }) + box({ x: -0.7, y: -0.1, w: 0.6, d: 12.2, h: RH }))]);
+
+  // Baseplate (Broker) with studs
+  var studs = '', cells = [];
+  for (var i = 0; i < 16; i++) for (var j = 0; j < 12; j++) if (!covered[i + ',' + j]) cells.push([i, j]);
+  cells.sort(function (a, b) { return a[0] + a[1] - b[0] - b[1]; });
+  cells.forEach(function (c) { studs += cyl(c[0] + 0.5, c[1] + 0.5, PH, SR, SH); });
+  o.push([0, G('broker plate', 'm-plate', box({ x: 0, y: 0, w: 16, d: 12, h: PH }) + studs)]);
+
+  // Topics are the plate's studs. Nothing is added for them; the Topics step rings four of them.
+
+  // The station: Model bricks, Action bricks, antenna. Inside #lg-lift so it rises as Model bricks slide in.
+  var FIELDS = [['temperature_c', 'DOUBLE'], ['temperature_f', 'DOUBLE'], ['wind_kmh', 'DOUBLE'], ['wind_mph', 'DOUBLE'], ['timestamp', 'STRING']];
+  var TYPE = { DOUBLE: 'm-teal', INT: 'm-grey', STRING: 'm-white', BOOL: 'm-lilac' };
+  var MH = 0.85 * BH, NM = FIELDS.length, ZA = Z1 + NM * MH;
+  var st = '', mid = {};
+  for (var n = NM - 1; n >= 0; n--) {
+    var z0 = Z1 + (NM - 1 - n) * MH, ty = FIELDS[n][1];
+    st += '<g data-part="models" data-mf="' + n + '" class="' + TYPE[ty] + ' mf">' + box({ x: SX, y: SY, w: SW, d: SD, z: z0, h: MH, label: FIELDS[n][0], dark: ty !== 'DOUBLE' }) + '</g>';
+    mid['m' + n] = z0 + MH / 2;
+  }
+  var ACT = [['HeatAlert', 6], ['ProcessWeather', SW], ['RequestWeather', SW]];
+  ACT.forEach(function (a, k) {
+    var za = ZA + k * BH, extra = '';
+    if (a[0] === 'HeatAlert') extra = '<g class="m-trans" id="lg-beacon">' + cyl(SX + 5.5, SY + 1, za + BH, 0.45, 3) + cyl(SX + 5.5, SY + 1, za + BH + 3, 0.36, 12) + '</g>';
+    st += '<g data-part="actions" data-act="' + a[0] + '" class="m-act ab">' + box({ x: SX, y: SY, w: a[1], d: SD, z: za, h: BH, studs: k === 2, label: a[0] }) + extra + '</g>';
+    mid[a[0]] = za + BH / 2;
+  });
+  var ZT = ZA + 3 * BH, CX = SX + SW / 2, CY = SY + SD / 2;
+  var AB = P(CX, CY, ZT + 8), AT = P(CX, CY, ZT + 92);
+  var ant = '<g class="m-conn">' + cyl(CX, CY, ZT, 0.9, 5) + '</g><g class="m-ant">' + cyl(CX, CY, ZT + 5, 0.3, 7) + '</g>' + whip(CX, CY, ZT + 8, ZT + 92) +
+    '<g id="lg-waves" opacity="0">' + [11, 20, 29].map(function (r) { return '<path class="wave" d="M' + f(AT[0] - r) + ' ' + f(AT[1] - r * .35) + 'A' + r + ' ' + r + ' 0 0 1 ' + f(AT[0] + r) + ' ' + f(AT[1] - r * .35) + '"/>'; }).join('') + '</g>';
+  st += G('routes antenna', '', ant);
+  o.push([SX + SY + 2, '<g id="lg-lift">' + st + '</g>']);
+  var CL = [AT[0] - 130, AT[1] + 14];
+  grow(CL[0] - 46, CL[1] - 36);
+  (function () {
+    var x = CL[0], y = CL[1], s = '';
+    var sun = '<g id="sky-sun" class="sky-sun"><circle cx="' + f(x + 22) + '" cy="' + f(y - 22) + '" r="11"/>';
+    for (var k = 0; k < 8; k++) { var a = k * Math.PI / 4, r0 = 15, r1 = 21; sun += '<line x1="' + f(x + 22 + r0 * Math.cos(a)) + '" y1="' + f(y - 22 + r0 * Math.sin(a)) + '" x2="' + f(x + 22 + r1 * Math.cos(a)) + '" y2="' + f(y - 22 + r1 * Math.sin(a)) + '"/>'; }
+    sun += '</g>';
+    s += sun;
+    s += '<path id="sky-cloud" class="icon-fill" d="M' + f(x - 30) + ' ' + f(y + 16) + 'h60a14 14 0 0 0 0-28a20 20 0 0 0-38-6a14 14 0 0 0-22 34z"/>';
+    s += '<g id="sky-rain" class="sky-rain">' + [-16, -4, 8, 20].map(function (dx, i) { return '<line x1="' + f(x + dx) + '" y1="' + f(y + 21) + '" x2="' + f(x + dx - 4) + '" y2="' + f(y + 31 + (i % 2) * 3) + '"/>'; }).join('') + '</g>';
+    s += '<g id="sky-wind" class="sky-wind"><path d="M' + f(x + 36) + ' ' + f(y - 6) + 'h22a4 4 0 1 0 -4 -4"/><path d="M' + f(x + 34) + ' ' + f(y + 4) + 'h30a4 4 0 1 1 -4 4"/><path d="M' + f(x + 38) + ' ' + f(y + 14) + 'h16"/></g>';
+    s += '<text class="icon-label" x="' + f(x + 2) + '" y="' + f(y + 46) + '" text-anchor="middle">Open-Meteo</text><text id="sky-cap" class="icon-sub" x="' + f(x + 2) + '" y="' + f(y + 59) + '" text-anchor="middle">weather API</text>';
+    o.push([SX + SY + 2.1, G('routes antenna', '', s)]);
+  })();
+
+  // Heartbeat brick with its green light
+  o.push([10, G('actions', 'm-act', box({ x: 1, y: 8, w: 3, d: 2, z: Z1, h: BH, label: 'Heartbeat' }) + '<g class="m-lime" id="lg-hb">' + cyl(3.5, 9, Z2, 0.4, 7) + '</g>')]);
+
+  // History Connector: a cylinder with an antenna
+  var FH = 1.5 * BH, FILEp;
+  (function () {
+    var cx = 12, cy = 9;
+    var s = '<g class="m-conn">' + cyl(cx, cy, Z1, 1.0, FH) + '</g>';
+    s += '<g class="m-dark">' + cyl(cx, cy, Z1 + FH, 1.0, 3) + '</g>';
+    s += '<g class="m-ant">' + cyl(cx, cy, Z1 + FH + 3, 0.28, 7) + '</g>' + whip(cx, cy, Z1 + FH + 10, Z1 + FH + 34);
+    var lp = P(cx - 0.55, cy + 0.95, Z1 + FH * 0.5);
+    s += '<text class="b-label" transform="matrix(' + C + ',' + S + ',0,1,' + f(lp[0]) + ',' + f(lp[1]) + ')" x="0" y="0" text-anchor="middle">FILE</text>';
+    FILEp = P(cx, cy, Z1 + FH + 3);
+    o.push([21, G('routes', '', s)]);
+  })();
+
+  // Email Connector: a mailbox with an antenna
+  var MAILp;
+  (function () {
+    var s = box({ x: 6, y: 9, z: Z1, w: 2, d: 2, h: BH, label: 'EMAIL' });
+    s += '<g class="m-dark">' + box({ x: 6.15, y: 9.15, z: Z1 + BH, w: 1.7, d: 1.7, h: 2 }) + '</g>';
+    s += '<g id="lg-lid">' + slope({ x: 6, y: 9, z: Z1 + BH, w: 2, d: 2, h: 0.7 * BH, lip: 0.18 * BH });
+    s += '<g class="m-ant">' + cyl(7.5, 9.25, Z1 + BH + 0.62 * BH, 0.24, 6) + '</g>' + whip(7.5, 9.25, Z1 + BH + 0.62 * BH + 8, Z1 + BH + 0.62 * BH + 28) + '</g>';
+    MAILp = P(7, 10, Z1 + BH + 4);
+    o.push([16, G('routes', 'm-conn', s)]);
+  })();
+
+  // Frame rails (Rules), front
+  o.push([40, G('rules', 'm-rule', box({ x: -0.7, y: 12.1, w: 17.4, d: 0.6, h: RH }) + box({ x: 16.1, y: -0.7, w: 0.6, d: 12.8, h: RH }))]);
+  o.sort(function (a, b) { return a[0] - b[0]; });
+  var html = o.map(function (x) { return x[1]; }).join('');
+
+  /* ---------- Callouts (do not grow the viewBox) ---------- */
+  function tag(x, y, text, mono) {
+    var w = text.length * (mono ? 7.1 : 7.2) + 18;
+    return '<rect class="tag-bg" x="' + f(x) + '" y="' + f(y - 14) + '" width="' + f(w) + '" height="24" rx="12"/><text class="' + (mono ? 'tag-mono' : 'tag-text') + '" x="' + f(x + 9) + '" y="' + f(y + 2.5) + '">' + esc(text) + '</text>';
+  }
+  function leader(from, to) { return '<path class="lead-line" d="M' + pt(from) + 'L' + pt(to) + '"/><circle class="lead-dot" cx="' + f(from[0]) + '" cy="' + f(from[1]) + '" r="3"/>'; }
+  function callout(show, inner) { return '<g class="callout" data-show="' + show + '">' + inner + '</g>'; }
+  function badge(p, n, t) {
+    var x = p[0], y = p[1];
+    return '<circle class="badge-c" cx="' + f(x) + '" cy="' + f(y) + '" r="14"/><text class="badge-n" x="' + f(x) + '" y="' + f(y + 5) + '" text-anchor="middle">' + n + '</text><text class="badge-t" x="' + f(x - 20) + '" y="' + f(y + 5) + '" text-anchor="end">' + t + '</text>';
+  }
+  var co = '';
+  var bk = Q(1.5, 10.5, PH);
+  co += callout('broker', leader(bk, [bk[0] + 36, bk[1] + 40]) + tag(bk[0] + 36, bk[1] + 40, 'Broker: the baseplate'));
+  var ts = '';
+  [['request', 'campus/weather/request', -190, -22], ['raw', 'campus/weather/raw', -170, 40], ['reading', 'campus/weather/reading', 90, 20], ['limit', 'config/heat_limit_c', 40, 60]].forEach(function (q) {
+    var s = Q(TOP[q[0]][0], TOP[q[0]][1], PH + SH), at = [s[0] + q[2], s[1] + q[3]], w = q[1].length * 7.1 + 18;
+    var edge = [s[0] + (q[2] < 0 ? -(RX + 5) : RX + 5), s[1]];
+    ts += '<ellipse class="ring" cx="' + f(s[0]) + '" cy="' + f(s[1]) + '" rx="' + f(RX + 5) + '" ry="' + f(RY + 3.5) + '"/>' + '<path class="lead-line" d="M' + pt(edge) + 'L' + pt([q[2] < 0 ? at[0] + w : at[0], at[1]]) + '"/>' + tag(at[0], at[1], q[1], true);
+  });
+  co += callout('topics', ts);
+  var ha = Q(SX + SW, SY + SD, mid.ProcessWeather);
+  co += callout('actions', leader(ha, [ha[0] + 70, ha[1] - 30]) + tag(ha[0] + 70, ha[1] - 30, 'Actions: the bricks'));
+  co += callout('routes', leader(AT, [AT[0] + 40, AT[1] - 6]) + tag(AT[0] + 40, AT[1] - 6, 'Connector: the antenna (weather in)') + leader(FILEp, [FILEp[0] + 30, FILEp[1] + 56]) + tag(FILEp[0] + 30, FILEp[1] + 56, 'Connectors: file and email out'));
+  var mm = Q(SX + SW, SY + SD, mid.m2);
+  co += callout('models', leader(mm, [mm[0] + 70, mm[1] + 10]) + tag(mm[0] + 70, mm[1] + 10, 'Model: one brick per field'));
+  var lk = Q(TOP.limit[0], TOP.limit[1], PH + 30), z0 = Q(12.5, 5.5, PH + 1), zq1 = Q(14.5, 5.5, PH + 1), zq2 = Q(14.5, 7.5, PH + 1), zq3 = Q(12.5, 7.5, PH + 1);
+  var rf = Q(2, 12.4, RH);
+  co += callout('rules', '<polygon class="zone" points="' + [z0, zq1, zq2, zq3].map(pt).join(' ') + '"/><path class="lock-shackle" d="M' + f(lk[0] - 7) + ' ' + f(lk[1]) + 'v-6a7 7 0 0 1 14 0v6"/><rect class="lock-body" x="' + f(lk[0] - 11) + '" y="' + f(lk[1]) + '" width="22" height="17" rx="3"/>' + tag(lk[0] + 18, lk[1] + 8, 'config/#: operators only', true) + leader(rf, [rf[0] - 120, rf[1] + 34]) + tag(rf[0] - 300, rf[1] + 34, 'Rules: the building frame'));
+  var PNL = Q(BX + BW / 2, BY + BD, BZ * 0.55);
+  var pb = Q(BX + 1.5, BY, BZ);
+  co += callout('panels', leader(pb, [pb[0] - 30, pb[1] - 30]) + tag(pb[0] - 200, pb[1] - 30, 'Panel: the box'));
+  co += callout('flow', badge([CL[0] - 50, CL[1] - 26], '1', 'Get') + badge(Q(2, 11, PH + 18), '2', 'Centralize') + badge([Q(SX, SY + SD, mid.m2)[0] - 26, Q(SX, SY + SD, mid.m2)[1]], '3', 'Process') + badge(Q(BX, BY + BD, BZ + 24), '4', 'Send'));
+  // The Thing: the station outlined as one unit
+  (function () {
+    // An isometric box around the station: footprint of the widest brick, floor on the plate, roof above the antenna waves.
+    var x0 = SX - 0.6, x1 = SX + 6.6, y0 = SY - 0.6, y1 = SY + SD + 0.6, z0 = PH, z1 = ZT + 92 + 36;
+    var s = '';
+    s += '<line class="thing-edge thing-back" x1="' + pt(Q(x0, y0, z0)).replace(',', '" y1="') + '" x2="' + pt(Q(x0, y0, z1)).replace(',', '" y2="') + '"/>';
+    s += '<line class="thing-edge thing-back" x1="' + pt(Q(x0, y0, z0)).replace(',', '" y1="') + '" x2="' + pt(Q(x1, y0, z0)).replace(',', '" y2="') + '"/>';
+    s += '<line class="thing-edge thing-back" x1="' + pt(Q(x0, y0, z0)).replace(',', '" y1="') + '" x2="' + pt(Q(x0, y1, z0)).replace(',', '" y2="') + '"/>';
+    s += '<polygon class="thing-face" points="' + [Q(x0, y0, z1), Q(x1, y0, z1), Q(x1, y1, z1), Q(x0, y1, z1)].map(pt).join(' ') + '"/>';
+    s += '<polygon class="thing-face" points="' + [Q(x0, y1, z0), Q(x1, y1, z0), Q(x1, y1, z1), Q(x0, y1, z1)].map(pt).join(' ') + '"/>';
+    s += '<polygon class="thing-face" points="' + [Q(x1, y0, z0), Q(x1, y1, z0), Q(x1, y1, z1), Q(x1, y0, z1)].map(pt).join(' ') + '"/>';
+    var c = Q(x1, y1, z0);
+    co += callout('thing', s + leader(c, [c[0] + 24, c[1] + 34]) + tag(c[0] + 24, c[1] + 34, 'DEFINE THING campus OF WeatherStation', true));
+  })();
+
+  var svg = document.getElementById('scene');
+  var pad = 30;
+  svg.setAttribute('viewBox', f(bounds.x0 - pad) + ' ' + f(bounds.y0 - pad) + ' ' + f(bounds.x1 - bounds.x0 + 2 * pad) + ' ' + f(bounds.y1 - bounds.y0 + 2 * pad));
+  svg.insertAdjacentHTML('beforeend', html + co + '<g class="lg-fx" id="lg-fx"></g>');
+  var LG = { P: Q, SX: SX, SY: SY, SW: SW, SD: SD, CX: CX, CY: CY, MH: MH, NM: NM, mid: mid, AT: AT, AB: AB, CL: CL, PNL: PNL, FILE: FILEp, MAIL: MAILp, FIELDS: FIELDS, TYPE: TYPE };
+
+  /* ---------- LoT highlighting ---------- */
+  var KW = /\b(DEFINE|ROUTE|CONNECTOR|ACTION|MODEL|PANEL|RULE|THING|TEMPLATE|PARAM|OF|WITH|ADD|EVENT|ON|EVERY|DO|SET|GET|JSON|IN|PAYLOAD|AS|PUBLISH|TOPIC|TO|TIMESTAMP|COLLAPSED|TYPE|DOUBLE|STRING|IF|THEN|ELSE|ALLOW|DENY|USER|GROUP|IS|OR|FOR|PRIORITY|Publish|REST_API|REST_API_CONFIG|VISIBILITY|PUBLIC|STATE|PUBLISHED|TITLE|LAYOUT|COLUMNS|ROWS|COMPONENT|AT|COLUMN|ROW|BIND|VALUE|RANGE|FROM|UNIT|JSON_PATH|MINUTES|SECONDS|ENV)\b/g;
+  Array.prototype.forEach.call(document.querySelectorAll('code.lot'), function (el) {
+    var parts = el.textContent.split(/("(?:[^"\\]|\\.)*")/);
+    el.innerHTML = parts.map(function (p, i) {
+      if (i % 2 === 1) return '<span class="tok-str">' + esc(p).replace(/\{\{[a-z_]+\}\}/g, function (m) { return '<span class="tok-var">' + m + '</span>'; }) + '</span>';
+      return esc(p).replace(/\{\{?[a-z0-9_.]+\}?\}/g, function (m) { return '<span class="tok-var">' + m + '</span>'; }).replace(KW, '<span class="tok-kw">$1</span>');
+    }).join('');
+  });
+
+  /* ---------- Stepper ---------- */
+  var steps = Array.prototype.slice.call(document.querySelectorAll('.step'));
+  var dots = document.getElementById('dots');
+  var prev = document.getElementById('prev'), next = document.getElementById('next');
+  var counter = document.getElementById('counter');
+  var stage = document.getElementById('stage');
+  var current = 0;
+  steps.forEach(function (s, i) {
+    var b = document.createElement('button');
+    b.className = 'dot'; b.type = 'button';
+    b.setAttribute('aria-label', (i + 1) + '. ' + s.getAttribute('data-name'));
+    b.title = (i + 1) + '. ' + s.getAttribute('data-name');
+    b.addEventListener('click', function () { go(i); });
+    dots.appendChild(b);
+  });
+  function go(i, fromHash) {
+    current = Math.max(0, Math.min(steps.length - 1, i));
+    steps.forEach(function (s, k) { s.hidden = k !== current; });
+    var s = steps[current];
+    svg.setAttribute('data-focus', s.getAttribute('data-focus') || 'all');
+    svg.setAttribute('data-flow', s.getAttribute('data-flow') || 'off');
+    svg.setAttribute('data-thing', s.getAttribute('data-thing') || 'off');
+    stage.setAttribute('data-focus', s.getAttribute('data-focus') || 'all');
+    Array.prototype.forEach.call(dots.children, function (d, k) { if (k === current) d.setAttribute('aria-current', 'step'); else d.removeAttribute('aria-current'); });
+    counter.textContent = (current + 1) + ' / ' + steps.length;
+    prev.disabled = current === 0;
+    next.textContent = current === steps.length - 1 ? 'Start again' : 'Next';
+    document.getElementById('lesson').scrollTop = 0;
+    if (!fromHash) { try { history.replaceState(null, '', '#step-' + (current + 1)); } catch (e) {} }
+  }
+  prev.addEventListener('click', function () { go(current - 1); });
+  next.addEventListener('click', function () { go(current === steps.length - 1 ? 0 : current + 1); });
+  document.addEventListener('keydown', function (e) {
+    if (e.target && /input|textarea|select/i.test(e.target.tagName)) return;
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); go(current + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(current - 1); }
+    else if (e.key === 'Home') { go(0); }
+    else if (e.key === 'End') { go(steps.length - 1); }
+  });
+  function fromHash() { var m = /^#step-(\d+)$/.exec(location.hash || ''); go(m ? parseInt(m[1], 10) - 1 : 0, true); }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  /* ---------- Animation: build order, manual, data flow ---------- */
+  (function () {
+    var mq = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+    function RM() { return mq.matches && !/motion=full/.test(location.search + location.hash); }
+    function T(ms) { return RM() ? Math.round(ms * 0.5) : ms; }
+    var NS = 'http://www.w3.org/2000/svg', M = document.getElementById.bind(document), fx = M('lg-fx'), lift = M('lg-lift');
+    var ORDER = ['broker', 'topics', 'actions', 'routes', 'models', 'rules', 'panels'];
+    var groups = Array.prototype.slice.call(svg.querySelectorAll('[data-part]')).map(function (el) {
+      var r = -1; el.getAttribute('data-part').split(/\s+/).forEach(function (t) { r = Math.max(r, ORDER.indexOf(t)); }); return { el: el, rank: r };
+    }).filter(function (x) { return x.rank >= 0; });
+    var mf = []; Array.prototype.forEach.call(svg.querySelectorAll('[data-mf]'), function (e) { mf[+e.getAttribute('data-mf')] = e; });
+    var act = {}; Array.prototype.forEach.call(svg.querySelectorAll('[data-act]'), function (e) { act[e.getAttribute('data-act')] = e; });
+    var built = 7, nModel = LG.NM, timers = [];
+    function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+    function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+    function setLift(k, instant) { nModel = k; lift.style.transition = instant ? 'none' : 'transform ' + T(450) + 'ms cubic-bezier(.45,0,.55,1)'; lift.style.transform = 'translate(0px,' + ((LG.NM - k) * LG.MH).toFixed(1) + 'px)'; }
+    function show(n) {
+      built = n;
+      groups.forEach(function (g) { g.el.classList.toggle('lg-off', g.rank >= n); });
+      setLift(n > 4 ? LG.NM : 0, true);
+    }
+    function fall(el, h) {
+      el.classList.remove('lg-off');
+      if (!el.animate) return;
+      h = RM() ? h * 0.35 : h;
+      el.animate([{ transform: 'translate(0px,' + (-h) + 'px)', opacity: 0 }, { transform: 'translate(0px,0px)', opacity: 1, offset: 0.62 }, { transform: 'translate(0px,-6px)', offset: 0.8 }, { transform: 'translate(0px,0px)', opacity: 1 }], { duration: T(680), easing: 'cubic-bezier(.45,0,.55,1)' });
+    }
+    function slideIn(el) {
+      el.classList.remove('lg-off');
+      if (!el.animate) return;
+      var d = RM() ? 0.35 : 1;
+      el.animate([{ transform: 'translate(' + (-80 * d) + 'px,' + (40 * d) + 'px)', opacity: 0 }, { transform: 'translate(0px,0px)', opacity: 1, offset: 0.75 }, { transform: 'translate(0px,0px)', opacity: 1 }], { duration: T(700), easing: 'cubic-bezier(.3,.7,.4,1)' });
+    }
+    function drop(rank, fast) {
+      if (rank === 4) { buildModel(fast); return; }
+      groups.forEach(function (g) { if (g.rank === rank) fall(g.el, rank === 0 ? 60 : rank === 1 ? 30 : 150); });
+    }
+    function manual(n) {
+      var F = LG.FIELDS;
+      M('lg-mstep').textContent = n >= F.length ? 'ok' : String(n + 1);
+      if (n >= F.length) { M('lg-mfield').textContent = 'WeatherReading'; M('lg-mtype').textContent = '5 fields: 4 DOUBLE, 1 STRING'; M('lg-mpart').innerHTML = ''; M('lg-mcount').textContent = ''; return; }
+      var ty = F[n][1];
+      M('lg-mfield').textContent = F[n][0]; M('lg-mtype').textContent = 'ADD ' + ty + ' "' + F[n][0] + '"'; M('lg-mcount').textContent = '1x';
+      M('lg-mpart').innerHTML = '<g class="' + LG.TYPE[ty] + '"><polygon class="f-top" points="31,2 61,10 31,18 1,10"/><polygon class="f-left" points="1,10 31,18 31,32 1,24"/><polygon class="f-right" points="31,18 61,10 61,24 31,32"/></g>';
+    }
+    function modelTime(fast) { return 250 + LG.NM * (fast ? T(520) : T(1100)); }
+    function buildModel(fast) {
+      var step = fast ? T(520) : T(1100);
+      mf.forEach(function (b) { b.classList.add('lg-off'); });
+      setLift(0, true); manual(0);
+      mf.forEach(function (b, n) { later(function () { manual(n); setLift(n + 1); slideIn(b); }, 250 + n * step); });
+      later(function () { manual(LG.NM); built = Math.max(built, 5); }, modelTime(fast));
+    }
+    function replay() {
+      show(0); var t = 250;
+      ORDER.forEach(function (_, i) { later(function () { drop(i, true); if (i !== 4) built = i + 1; }, t); t += i === 4 ? modelTime(true) + T(300) : T(560); });
+      return t;
+    }
+    function liftThing() {
+      if (!lift.animate) return;
+      var h = RM() ? 14 : 40;
+      lift.animate([{ transform: 'translate(0px,0px)' }, { transform: 'translate(0px,' + (-h) + 'px)', offset: 0.45 }, { transform: 'translate(0px,' + (-h) + 'px)', offset: 0.65 }, { transform: 'translate(0px,0px)' }], { duration: T(1800), easing: 'cubic-bezier(.45,0,.55,1)' });
+    }
+    function off() { return (LG.NM - nModel) * LG.MH; }
+    function onFace(z) { var p = LG.P(LG.CX, LG.SY + LG.SD, z); return [p[0], p[1] + off()]; }
+    function pulse(el, red) { if (el && el.animate) el.animate([{ filter: 'none' }, { filter: red ? 'brightness(1.4) drop-shadow(0 0 8px #ff4d4f)' : 'brightness(1.3)' }, { filter: 'none' }], { duration: T(red ? 700 : 450), iterations: red ? 3 : 1 }); }
+    var DOC = '<g class="lg-doc"><path d="M-7 -9 h9 l5 5 v13 h-14 z"/><path d="M2 -9 v5 h5"/><line x1="-4" y1="2" x2="4" y2="2"/><line x1="-4" y1="5.5" x2="4" y2="5.5"/></g>';
+    var MAIL = '<g class="lg-mail"><rect x="-10" y="-7" width="20" height="14" rx="1.5"/><path d="M-10 -6 L0 2 L10 -6"/><circle cx="8" cy="-6" r="3"/></g>';
+    function hop(a, b, dur, cls, label, liftPx, done) {
+      var p = document.createElementNS(NS, 'path');
+      p.setAttribute('d', 'M' + a[0].toFixed(1) + ' ' + a[1].toFixed(1) + 'Q' + ((a[0] + b[0]) / 2).toFixed(1) + ' ' + (Math.min(a[1], b[1]) - (liftPx || 0)).toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1));
+      var L = p.getTotalLength(), g = document.createElementNS(NS, 'g');
+      g.setAttribute('class', 'lg-pk ' + (cls || ''));
+      g.innerHTML = (/lg-doc/.test(cls || '') ? DOC : /lg-mail/.test(cls || '') ? MAIL : '<circle r="10" class="lg-glow"/><circle r="6"/>') + (label ? '<text x="-14" y="4" text-anchor="end">' + label + '</text>' : '');
+      fx.appendChild(g);
+      if (/lg-fade/.test(cls || '') && g.animate) g.animate([{ opacity: 1 }, { opacity: 1, offset: 0.55 }, { opacity: 0 }], { duration: T(dur), fill: 'forwards' });
+      var t0 = performance.now(), D = T(dur);
+      (function stp(now) {
+        var k = Math.min(1, (now - t0) / D), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2, q = p.getPointAtLength(L * e);
+        g.setAttribute('transform', 'translate(' + q.x.toFixed(1) + ',' + q.y.toFixed(1) + ')');
+        if (k < 1 && g.isConnected) requestAnimationFrame(stp); else { var alive = g.isConnected; g.remove(); if (alive && done) done(); }
+      })(t0);
+    }
+    function chain(list, i) { i = i || 0; if (i >= list.length) return; var h = list[i]; hop(h.a, h.b, h.d, h.c, h.l, h.lift, function () { if (h.end) h.end(); chain(list, i + 1); }); }
+    function waves() { var w = M('lg-waves'); if (w.animate) w.animate([{ opacity: 0 }, { opacity: 1 }, { opacity: 0 }], { duration: T(800), iterations: 2 }); }
+    // a stream of bits rising from the file cylinder while a document is written
+    function bits(p) {
+      var n = RM() ? 5 : 10;
+      for (var i = 0; i < n; i++) (function (i) {
+        later(function () {
+          var t = document.createElementNS(NS, 'text');
+          t.setAttribute('class', 'lg-bit');
+          t.setAttribute('x', (p[0] + (Math.random() - 0.5) * 22).toFixed(1));
+          t.setAttribute('y', (p[1] - 6).toFixed(1));
+          t.textContent = Math.random() < 0.5 ? '0' : '1';
+          fx.appendChild(t);
+          var rise = -(30 + Math.random() * 24);
+          if (t.animate) t.animate([{ transform: 'translate(0px,0px)', opacity: 1 }, { transform: 'translate(0px,' + rise.toFixed(0) + 'px)', opacity: 0 }], { duration: T(950), easing: 'ease-out' }).onfinish = function () { t.remove(); };
+          else later(function () { t.remove(); }, T(950));
+        }, i * T(85));
+      })(i);
+    }
+    function screen(c, wk, hot) {
+      var fahr = c * 9 / 5 + 32, mph = wk * 0.621371;
+      M('lg-sf').textContent = c.toFixed(1) + ' °C'; M('lg-st').textContent = fahr.toFixed(1) + ' °F'; M('lg-sw').textContent = wk.toFixed(1) + ' km/h';
+      M('lg-arc').setAttribute('d', arc(42, 100, 18, fk(fahr)));
+      M('lg-sa').setAttribute('class', hot ? 'art-hot' : 'art-good'); M('lg-sat').textContent = hot ? 'On' : 'Off';
+      var pf = M('pm-f');
+      if (pf) {
+        pf.textContent = c.toFixed(1) + ' °C'; M('pm-c').textContent = fahr.toFixed(1) + ' °F'; M('pm-w').textContent = wk.toFixed(1) + ' km/h';
+        M('pm-arc').setAttribute('d', arc(50, 50, 34, fk(fahr)));
+        M('pm-heat').textContent = hot ? 'On' : 'Off'; M('pm-dot').className = hot ? 'hot' : '';
+      }
+    }
+    // the mailbox opens and a letter leaves it
+    function sendMail() {
+      var lid = M('lg-lid');
+      if (lid && lid.animate) lid.animate([{ transform: 'translate(0px,0px)' }, { transform: 'translate(0px,-10px)', offset: 0.25 }, { transform: 'translate(0px,-10px)', offset: 0.7 }, { transform: 'translate(0px,0px)' }], { duration: T(2000), easing: 'ease-in-out' });
+      later(function () {
+        var from = [LG.MAIL[0], LG.MAIL[1] - 8];
+        hop(from, [from[0] - 90, from[1] - 120], 1600, 'lg-mail lg-fade', '', 40, null);
+      }, T(450));
+    }
+    function heatFlash() {
+      var b = M('lg-beacon'); b.classList.add('on'); later(function () { b.classList.remove('on'); }, T(2400));
+      pulse(act.HeatAlert, true);
+      var H = onFace(LG.mid.HeatAlert), t = document.createElementNS(NS, 'g'); t.setAttribute('class', 'lg-alert');
+      var x = H[0] + 150, y = H[1] - 10;
+      t.innerHTML = '<rect x="' + (x - 54).toFixed(1) + '" y="' + (y - 15).toFixed(1) + '" width="108" height="22" rx="11"/><text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" text-anchor="middle">HEAT ALERT</text>';
+      fx.appendChild(t); later(function () { t.remove(); }, T(2600));
+    }
+    // the sky over Open-Meteo: sun, cloud, rain, wind, following the reading
+    function sky(cond, wk) {
+      var windy = wk > 12, kmh = wk.toFixed(0);
+      M('sky-sun').classList.toggle('on', cond === 'sun');
+      M('sky-rain').classList.toggle('on', cond === 'rain');
+      M('sky-wind').classList.toggle('on', windy);
+      M('sky-cloud').classList.toggle('rainy', cond === 'rain');
+      M('sky-cap').textContent = (cond === 'sun' ? 'sunny' : cond === 'rain' ? 'rain' : 'cloudy') + (windy ? ', windy' : '') + ' · ' + kmh + ' km/h';
+    }
+    sky('sun', 12.6);
+    var DATA = [[18.4, 12.6, 'sun'], [22.9, 9.4, 'cloud'], [33.6, 6.1, 'sun'], [26.2, 14.8, 'rain'], [19.9, 18.2, 'cloud'], [35.1, 5.0, 'sun']], di = 0, cyc = null;
+    function cycle() {
+      if (built < 3) return;
+      var d = DATA[di++ % DATA.length], c = d[0], hot = c > 30, lbl = c.toFixed(0) + '°C', mid = LG.mid, hasM = built > 4, hasR = built > 3;
+      var list = [], o = off(), AT = [LG.AT[0], LG.AT[1] + o], AB = [LG.AB[0], LG.AB[1] + o];
+      var pR = onFace(mid.RequestWeather), pP = onFace(mid.ProcessWeather), pH = onFace(mid.HeatAlert);
+      if (!hasR) sky(d[2], d[1]);
+      if (hasR) {
+        list.push({ a: pR, b: AB, d: 450, end: function () { pulse(act.RequestWeather); } });
+        list.push({ a: AB, b: AT, d: 450 });
+        list.push({ a: AT, b: [LG.CL[0] + 30, LG.CL[1]], d: 600, lift: 30, end: function () { waves(); sky(d[2], d[1]); } });
+        list.push({ a: [LG.CL[0] + 30, LG.CL[1]], b: AT, d: 600, lift: 30, c: 'lg-json', l: 'JSON', end: waves });
+        list.push({ a: AT, b: pR, d: 650, c: 'lg-json', end: function () { pulse(act.RequestWeather); } });
+      }
+      list.push({ a: pR, b: pP, d: 380, c: 'lg-json', end: function () { pulse(act.ProcessWeather); } });
+      list.push({ a: pP, b: pH, d: 380, c: hot ? 'lg-hot' : '', l: lbl, end: function () {
+        pulse(act.HeatAlert);
+        if (hot) { heatFlash(); if (hasR) hop(pH, LG.MAIL, 1100, 'lg-hot', '', 40, sendMail); }
+      } });
+      if (hasM) {
+        var prv = pH;
+        for (var n = 0; n < LG.NM; n++) (function (n) { var q = onFace(mid['m' + n]); list.push({ a: prv, b: q, d: 220, c: 'lg-model', l: n === 0 ? lbl : '', end: function () { pulse(mf[n]); } }); prv = q; })(n);
+        list.push({ a: prv, b: onFace(PH + 2), d: 200, c: 'lg-model', end: function () {
+          var base = onFace(PH + 2);
+          if (built > 6) hop(base, LG.PNL, 900, 'lg-doc', '', 60, function () { screen(c, d[1], hot); });
+          if (hasR) hop(base, LG.FILE, 900, 'lg-doc', '', 30, function () { bits(LG.FILE); });
+        } });
+      }
+      chain(list);
+    }
+    function startFlow() { if (cyc) return; cycle(); cyc = setInterval(cycle, T(6500)); }
+    function stopFlow() { clearInterval(cyc); cyc = null; }
+    var lastStep = -1;
+    function apply() {
+      if (typeof current !== 'number' || current === lastStep) return;
+      var prevStep = lastStep; lastStep = current;
+      clearTimers(); stopFlow(); Array.prototype.forEach.call(fx.querySelectorAll('.lg-pk,.lg-alert'), function (n) { n.remove(); });
+      var s = steps[current], idx = ORDER.indexOf(s.getAttribute('data-focus'));
+      if (s.getAttribute('data-replay') === 'on') { later(startFlow, replay() + T(300)); return; }
+      if (s.getAttribute('data-thing') === 'on') { show(7); manual(LG.NM); later(liftThing, T(400)); later(startFlow, T(2400)); return; }
+      if (idx < 0) { show(7); manual(LG.NM); startFlow(); return; }
+      var was = built;
+      show(idx);
+      if (was <= idx || current === prevStep + 1) drop(idx); else { show(idx + 1); if (idx === 4) manual(LG.NM); }
+      if (idx !== 4) built = idx + 1;
+      later(startFlow, idx === 4 ? modelTime(false) + 300 : T(800));
+    }
+    new MutationObserver(function () { setTimeout(apply, 0); }).observe(svg, { attributes: true, attributeFilter: ['data-focus', 'data-flow', 'data-thing'] });
+    setTimeout(apply, 0);
+    if (mq.addEventListener) mq.addEventListener('change', function () { lastStep = -1; apply(); });
+  })();
+
+  document.getElementById('fs').addEventListener('click', function () {
+    try {
+      if (document.fullscreenElement) { document.exitFullscreen(); }
+      else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen().catch(function () {}); }
+    } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>

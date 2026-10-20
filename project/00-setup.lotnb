@@ -1,0 +1,22 @@
+[
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "# Setup: variables and the heat limit\n\n**Goal:** give the broker your site and mail settings, and a heat limit, before the labs.\n\nNothing to run in this notebook: the lines below are **commands** for the broker, not LoT cells.\n\n**Where things are in the HUB:** the dock at the bottom opens **Data Viewer**, **Connectors**, **LoT Editor** and **Dashboards** (hover an icon to see its name). Your user name at the top right (`root`) opens **Command Console** and **Broker Settings**. The licence is shown next to it, at the top right."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 1. Variables and the secret\n\nOpen **Command Console** (click `root` at the top right) and send these lines one at a time:\n\n```\n-setEnv WEATHER_LAT=40.7128\n-setEnv WEATHER_LON=-74.0060\n-setEnv SMTP_HOST=mailpit\n-setEnv SMTP_USER=weather@example.com\n-setSecret SMTP_PASSWORD=any-password\n```\n\nEach answers with a line of JSON that contains `\"success\":true` and *… set successfully*.\n\n- `WEATHER_LAT` / `WEATHER_LON` are your site (the example is New York).\n- Write `NAME=value` with no spaces around `=`.\n- You can also add them in **Broker Settings → Variables & Secrets**."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 2. The heat limit\n\nOpen **Data Viewer**, click **Publish** (paper-plane icon on the left), and publish:\n\n- topic `config/heat_limit_c`\n- payload `30`\n- **Retain** switched on\n\nThat is the heat limit in °C. HeatAlert (Lab 4) reads it."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## Check it worked\n\n- **Broker Settings → Variables & Secrets:** four variables under **Variables**, and `SMTP_PASSWORD` under **Secrets** (its value is never shown).\n- **Data Viewer:** the topic tree has `config` → `heat_limit_c` = `30`.\n\nNext: `01-heartbeat`."
+ }
+]
