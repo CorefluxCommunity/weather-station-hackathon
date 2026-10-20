@@ -1,5 +1,7 @@
 # Weather station hackathon (Language of Things)
 
+<img src="https://assets.coreflux.org/brand/v1/corefluxLogo_corefluxLogoHorizontalOrange.png" alt="Coreflux" width="280">
+
 Build a live campus weather station that runs entirely inside one Coreflux Broker: it asks a
 weather API for your site, converts the units, raises a heat alert, keeps a CSV history, emails
 the team once per heat episode and shows a live dashboard in the Coreflux HUB.
