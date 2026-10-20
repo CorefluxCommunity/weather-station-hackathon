@@ -28,8 +28,17 @@ template and the `exports/` folder.
      ([guide](https://docs.coreflux.org/latest/quick-start/vscode)), connect it to `localhost:1883`
      as `root` / `coreflux`, open `project/01-heartbeat.lotnb` and run its cell.
 
-![Notebooks imported in the HUB](../docs/screenshots/05-notebooks-imported.png)
-*The eight notebooks in the HUB after **Import .lotnb**.*
+![Project menu in the LoT Editor](../docs/screenshots/37-hub-project-menu-no-clone.png)
+*Right-click *Untitled*: **Import .lotnb** (there is no clone-from-git command).*
+
+![Notebooks imported from the downloaded copy](../docs/screenshots/38-cloned-notebooks-imported.png)
+*The eight notebooks from `project/`, imported. `notebook.lotnb` is the project's empty default.*
+
+![Run Cell on 01-heartbeat](../docs/screenshots/39-cloned-lab1-run-cell.png)
+*Click ▷ on the cell: *Action 'Heartbeat' added successfully*.*
+
+![Heartbeat in Data Viewer](../docs/screenshots/40-cloned-lab1-heartbeat.png)
+*Data Viewer: `campus/weather/heartbeat` shows `ok`.*
 
 ## 1. Start the broker, the HUB and Mailpit
 
