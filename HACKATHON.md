@@ -112,7 +112,7 @@ after you deploy it. Publish `poll` yourself to test.
 
 ## Step by step, with screenshots
 
-Screenshots of every step, taken on a fresh laptop setup (Community Edition). Click to open each lab.
+Screenshots of every step, taken on a fresh laptop setup. Labs 1 to 4 and 6 show Community Edition; Lab 5 and the Thing stretch goal show a licensed broker. Click to open each lab.
 
 <details><summary>Before you start</summary>
 
@@ -126,7 +126,7 @@ Screenshots of every step, taken on a fresh laptop setup (Community Edition). Cl
 *3. The HUB. The dock at the bottom opens the tools; `root` at the top right opens the account menu.*
 
 ![Licence at the top right](docs/screenshots/36-licence-status-bar.png)
-*The licence (here *Community*) is shown next to your user name.*
+*The licence (*Community*, or the edition of your licence once it is active) is shown next to your user name.*
 
 ![Account menu](docs/screenshots/28-account-menu.png)
 *Click `root` for Command Console, Broker Settings and Log out.*
@@ -211,17 +211,23 @@ Screenshots of every step, taken on a fresh laptop setup (Community Edition). Cl
 
 <details><summary>Lab 5: Rules</summary>
 
-![License tab](docs/screenshots/24-lab5-license-tab.png)
-*Broker Settings → License: on Community, *RBAC / Topic ACL* is not included.*
-
 ![Activation code](docs/screenshots/25-lab5-activation-code.png)
-*Paste the event licence code (`CFLX-…`) in **Activation code** and click **Activate**.*
+*Broker Settings → License: paste the event licence code (`CFLX-…`) in **Activation code** and click **Activate**.*
+
+![License tab](docs/screenshots/24-lab5-license-tab.png)
+*With a licence active the tab shows the tier, and **RBAC / Topic ACL** is ticked under Features. (Licence details hidden here.)*
+
+![Licence at the top right](docs/screenshots/36-licence-status-bar.png)
+*The top right now shows the licence instead of *Community*.*
 
 ![Users](docs/screenshots/26-lab5-users.png)
 *Command Console: the two users and the `operators` group. (Passwords hidden here.)*
 
+![Rule deployed](docs/screenshots/27-lab5-rule-deployed.png)
+*Run the Rule cell with ▷: *Rule 'ProtectWeatherConfig' added successfully!**
+
 ![Refused on Community](docs/screenshots/27-lab5-rule-community-refused.png)
-*Without the event licence the Rule is refused: Lab 5 is a read-along.*
+*Read-along: without a licence the Rule is refused.*
 
 ![Connect as bob](docs/screenshots/29-lab5-connect-as-bob.png)
 *Log out, ⚙ next to *Weather station* → **Add user**: `bob`, tick **Default**, **Connect**.*
@@ -230,10 +236,13 @@ Screenshots of every step, taken on a fresh laptop setup (Community Edition). Cl
 *As bob the HUB shows *No SYS* and fewer dock icons: normal.*
 
 ![bob publishes 5](docs/screenshots/31-lab5-bob-publishes-5.png)
-*bob publishes `5` to `config/heat_limit_c`. With the Rule it is refused; on Community (shown) it is kept.*
+*bob publishes `5` to `config/heat_limit_c`. The HUB says *Sent (delivery unconfirmed)*: the broker drops it without an error.*
 
 ![Back to root](docs/screenshots/32-lab5-pick-root-again.png)
-*Log out, pick `root` in the user chip, **Connect**. Put the limit back to `30`.*
+*Log out, pick `root` in the user chip, **Connect**.*
+
+![Limit still 30](docs/screenshots/41-lab5-limit-still-30.png)
+*As root, `config/heat_limit_c` still shows `30`: bob was refused. (Without the Rule it would show `5`.)*
 
 </details>
 
@@ -307,6 +316,16 @@ The hints are in `project/07-stretch.lotnb`; write your code in new cells there.
 4. A second site on CampusWeather.
 5. More on the panel: wind in mph and the time of the last reading.
 6. One Thing per site with `DEFINE THING TEMPLATE`.
+
+<details><summary>Stretch goal 6: the Thing, with a licence</summary>
+
+![Thing deployed](docs/screenshots/42-stretch-thing-deployed.png)
+*A new cell in `07-stretch` with the template and `DEFINE THING campus OF WeatherStation`, run with ▷: *Applied Things 'WeatherStation', 'campus'*. Its Connector is the 4th, so on Community Edition remove one first.*
+
+![Thing reading](docs/screenshots/43-stretch-thing-reading.png)
+*Publish `poll` to `campus/request`: the Thing's own `campus/raw` and `campus/reading` appear.*
+
+</details>
 
 Two LoT quirks to know when you write your own code:
 

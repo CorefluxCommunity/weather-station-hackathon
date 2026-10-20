@@ -32,7 +32,7 @@
  {
   "kind": 1,
   "language": "markdown",
-  "value": "## 6. One Thing per site\n\nRewrite the station as a `DEFINE THING TEMPLATE` (see the slides) so a second site is one line. The Thing brings its own Connector, so on Community Edition (3 Connectors) remove one first (`-removeConnector <Name>`) or use the event licence. Try it with `-addThing --dryRun …` in Command Console before you deploy."
+  "value": "## 6. One Thing per site\n\nRewrite the station as a `DEFINE THING TEMPLATE` (see the slides) so a second site is one line. Put the template and `DEFINE THING campus OF WeatherStation` in one new cell and run it with ▷: the answer is *Applied Things 'WeatherStation', 'campus'*. The Thing's topics start with its name (`campus/request`, `campus/raw`, `campus/reading`): publish `poll` to `campus/request` to test it.\n\nIts Connector needs the same settings as CampusWeather (`ENABLE_CLIENT`, `USE_SSL`, `METHOD \"GET\"`), or the poll gets no answer. It is a 4th Connector, so on Community Edition (3 Connectors) remove one first (`-removeConnector <Name>`) or use the event licence."
  },
  {
   "kind": 1,

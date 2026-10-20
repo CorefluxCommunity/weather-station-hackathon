@@ -471,9 +471,12 @@ PUBLISH MODEL WeatherReading TO "campus/weather/reading" WITH
     WITH CONNECTOR Weather WITH TYPE REST_API
         ADD REST_API_CONFIG
             WITH BASE_ADDRESS "https://api.open-meteo.com"
+            WITH ENABLE_CLIENT "true"
+            WITH USE_SSL "true"
         ADD EVENT GetCurrentWeather
             WITH SOURCE_TOPIC "{{path}}/request"
             WITH DESTINATION_TOPIC "{{path}}/raw"
+            WITH METHOD "GET"
             WITH ENDPOINT "/v1/forecast?latitude={{lat}}&amp;longitude={{lon}}&amp;current=temperature_2m,wind_speed_10m"
     WITH MODEL Reading COLLAPSED
         ADD DOUBLE "temperature_c"
