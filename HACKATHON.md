@@ -79,10 +79,15 @@ Coreflux is an **MQTT broker** with a built-in programming language called **LoT
 
 Optional, and you can come back to it at any time. [`index.html`](index.html) is an interactive, 11-slide visual overview of how all the pieces of the weather station fit together.
 
-**To open it:** once you have downloaded this repository ([Step 1.2](#12-download-this-repository)), open `index.html` from your local copy in any browser. Use the **Next** / **Back** buttons or your left/right arrow keys, and **Full screen** at the top right for a larger view.
+**To open it**, either:
 
-![The platform overview, slide 1](docs/screenshots/44-index-concepts.png)
-*The platform overview (`index.html`), slide 1: the finished weather station.*
+- in the HUB, after [Step 2.3](#23-open-the-lesson-in-the-lot-editor): click **`index.html`** in the LoT Editor tree, or
+- once you have downloaded this repository ([Step 1.2](#12-download-this-repository)): open `index.html` from your local copy in any browser.
+
+Use the **Next** / **Back** buttons or your left/right arrow keys, and **Full screen** at the top right for a larger view.
+
+![The platform overview in the LoT Editor, slide 1](docs/screenshots/44-index-concepts.png)
+*The platform overview (`index.html`) in the LoT Editor, slide 1: the finished weather station.*
 
 | Slide | Concept | How it is used in your weather station |
 |---|---|---|
@@ -132,7 +137,7 @@ docker compose wait load-project
 
 **What just happened?**
 1. `docker compose up -d` started the **Coreflux Broker** (v2.22+), **Coreflux HUB** (v2.12+), and **Mailpit** (a local test email server).
-2. `docker compose wait load-project` waited for a helper container to load this repository into the broker as a project named **`weather-station`**, so all the lab notebooks are ready for you inside the HUB.
+2. `docker compose wait load-project` waited for a helper container to add this repository to the broker as a project named **`weather-station`**. Nothing is deployed yet: you open the notebooks in the HUB in [Step 2.3](#23-open-the-lesson-in-the-lot-editor) and deploy each piece yourself in the labs.
 
 | Service | Where to open it | Credentials / Notes |
 |---|---|---|
@@ -177,6 +182,27 @@ Spot two areas on the screen:
 
 ![Account menu](docs/screenshots/28-account-menu.png)
 *5. Click `root` at the top right to open **Command Console**, **Broker Settings**, and **Log out**.*
+
+</details>
+
+### 2.3 Open the lesson in the LoT Editor
+
+The lesson is stored on the broker as the project **`weather-station`**. Bring its files into the editor once:
+
+1. Click **LoT Editor** in the bottom dock.
+2. Under **Projects**, right-click **`weather-station`** and click **Pull project from broker**.
+3. The project's files appear in the tree: `project/` with the lab notebooks, `index.html` and the guides. `00-setup` opens. The header shows `10 not running`: nothing is deployed until you run the cells in the labs.
+
+Do **not** click **Activate** on the project: that deploys every lab at once.
+
+<details>
+<summary><strong>📸 Screenshots: Opening the lesson</strong></summary>
+
+![Pull project from broker](docs/screenshots/45-pull-project-menu.png)
+*1. Right-click `weather-station` under **Projects** → **Pull project from broker**.*
+
+![The lesson in the LoT Editor](docs/screenshots/46-lesson-pulled.png)
+*2. The files are in the tree and `00-setup` opens. `10 not running` means nothing is deployed yet.*
 
 </details>
 
@@ -243,7 +269,7 @@ Your weather station needs coordinates to query and an initial heat threshold in
 
 ## 6. Step 4: Build the station (Labs 1–6)
 
-Open **LoT Editor** from the bottom dock. Under `weather-station` → `project/`, you will see the lab notebooks (`01-heartbeat` through `07-stretch`).
+Open **LoT Editor** from the bottom dock. Under `weather-station` → `project/`, you will see the lab notebooks (`01-heartbeat` through `07-stretch`). If the tree only shows **Entities**, pull the project first ([Step 2.3](#23-open-the-lesson-in-the-lot-editor)).
 
 ### How to work with notebooks in the LoT Editor
 
@@ -253,7 +279,7 @@ Open **LoT Editor** from the bottom dock. Under `weather-station` → `project/`
   - Click **Deploy All** at the top-right of the notebook to deploy all cells in that notebook from top to bottom.
   - Each cell shows a green confirmation (*`… added successfully`*) when deployed.
 - **If you edit a cell:** Just click **▷** again — the broker updates the Action, Model, Connector, Rule, or Panel in place.
-- **Important:** Do **not** use *Push project to broker* in the project menu; run cells with **▷** or **Deploy All** as you progress through each lab.
+- **Important:** Do **not** use *Push project to broker* or *Activate* in the project menu; run cells with **▷** or **Deploy All** as you progress through each lab.
 
 | Lab | Notebook | What you deploy |
 |---|---|---|

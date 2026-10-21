@@ -37,7 +37,7 @@ All inside a single **Coreflux Broker**, your weather station will:
 |---|---|
 | **[PREREQUISITES.md](PREREQUISITES.md)** | **Prerequisites.** Installing and verifying Docker and Docker Compose before the workshop. |
 | **[HACKATHON.md](HACKATHON.md)** | **Main workshop guide.** Start-to-finish instructions, concepts, lab steps, screenshots, and troubleshooting. |
-| **[index.html](index.html)** | **Interactive visual overview.** Animated slides explaining every Coreflux concept used in the labs. Open it directly in your browser. |
+| **[index.html](index.html)** | **Interactive visual overview.** Animated slides explaining every Coreflux concept used in the labs. Open it in the HUB's LoT Editor or directly in your browser. |
 | **[project/](project/)** | The 8 lab notebooks (`00-setup.lotnb` – `07-stretch.lotnb`), `docker-compose.yml`, HTML email template, and `exports/` folder. |
 | **[project/README.md](project/README.md)** | **Quick reference & cheat sheet** for commands, environment variables, licensing, and resets. |
 | **[vscode/README.md](vscode/README.md)** | Optional guide if you prefer running the `.lotnb` notebooks in **VS Code** instead of the HUB. |
