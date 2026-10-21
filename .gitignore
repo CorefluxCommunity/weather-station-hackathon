@@ -1,3 +1,6 @@
+# Local git worktrees
+.worktrees/
+
 # OS and editors
 .DS_Store
 ._*

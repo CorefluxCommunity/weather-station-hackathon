@@ -8,7 +8,7 @@ The notebooks use `DEFINE CONNECTOR`, which Broker 2.14 and earlier do not have.
 for the core labs.
 
 Install Docker and Docker Compose before section 1. The steps are in
-[Prerequisites](../HACKATHON.md#prerequisites) (`docker` and `docker compose version` should both
+[Prerequisites](../PREREQUISITES.md) (`docker` and `docker compose version` should both
 print a version).
 
 Before the labs, clone the lesson into the HUB and click `index.html` in the LoT Editor. The slides
@@ -55,7 +55,7 @@ template and the `exports/` folder.
 
 ## 1. Start the broker, the HUB and Mailpit
 
-You need Docker with Docker Compose (see [Prerequisites](../HACKATHON.md#prerequisites)) and internet
+You need Docker with Docker Compose (see [Prerequisites](../PREREQUISITES.md)) and internet
 access (the broker calls `api.open-meteo.com`). In this `project` folder:
 
 ```
