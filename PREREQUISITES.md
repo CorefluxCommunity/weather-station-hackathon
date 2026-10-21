@@ -1,7 +1,5 @@
 # Prerequisites
 
-The core hackathon labs (Labs 1 to 6) take about **2 hours**, with optional stretch goals afterward.
-
 ## What you need
 
 - **Docker** and **Docker Compose v2** (installation instructions below)
@@ -12,25 +10,11 @@ The core hackathon labs (Labs 1 to 6) take about **2 hours**, with optional stre
 
 ---
 
-## Step 1: Check if Docker is already installed
+## Step 1: Install Docker
 
 Docker runs the Broker, HUB, and Mailpit as containers, and Docker Compose starts all of them with a single command. The workshop uses Compose v2 (`docker compose` with a space, not the older `docker-compose`).
 
-Open a terminal and run:
-
-```bash
-docker --version
-docker compose version
-```
-
-- Both commands should print a version number.
-- `docker compose version` should show `Docker Compose version v2…`.
-
-If both commands succeed, you are ready — jump straight to **[`HACKATHON.md`](HACKATHON.md)**!
-
----
-
-## Step 2: Install Docker (if needed)
+Already have Docker? Skip to Step 2 and check it anyway.
 
 | Operating System | What to install |
 |---|---|
@@ -39,6 +23,20 @@ If both commands succeed, you are ready — jump straight to **[`HACKATHON.md`](
 | **Linux** | [Docker Engine](https://docs.docker.com/engine/install/) and the [Docker Compose plugin](https://docs.docker.com/compose/install/linux/). |
 
 *(See [Get Docker](https://docs.docker.com/get-started/get-docker/) for an overview of all platforms.)*
+
+---
+
+## Step 2: Check the installation
+
+Open a terminal (Terminal on macOS and Linux, PowerShell on Windows) and run:
+
+```bash
+docker --version
+docker compose version
+```
+
+- Both commands should print a version number.
+- `docker compose version` should show `Docker Compose version v2…`.
 
 ---
 
@@ -53,4 +51,4 @@ If both commands succeed, you are ready — jump straight to **[`HACKATHON.md`](
 
 ---
 
-Once both version checks pass, continue to **[`HACKATHON.md`](HACKATHON.md)**.
+Once both version checks pass, go back to **[`HACKATHON.md`](HACKATHON.md#12-download-this-repository)** and download the repository.

@@ -1,11 +1,13 @@
 #!/bin/sh
-# Load this repository onto the broker once MQTT is accepting commands.
+# Add this repository to the broker once MQTT is accepting commands.
 #
 # docker-compose.yml mounts the repo at /opt/weather-station inside the broker.
-# -addProject names the project after that directory (weather-station), then
-# -loadProject activates it. A later start only reloads: the copy already on
-# the broker is left in place, so edits made in the HUB survive a restart.
-# `docker compose down -v` wipes that copy with the rest of the broker data.
+# -addProject names the project after that directory (weather-station), so its
+# notebooks are listed in the HUB's LoT Editor. The project is not loaded:
+# -loadProject would deploy every cell at once, and the labs deploy them one by
+# one. A later start leaves the copy already on the broker in place, so edits
+# made in the HUB survive a restart. `docker compose down -v` wipes that copy
+# with the rest of the broker data.
 set -u
 
 HOST="${MQTT_HOST:-broker}"
@@ -74,11 +76,4 @@ else
   exit 1
 fi
 
-load=$(reply "-loadProject ${PROJECT_NAME} -requestId hackathon-load" hackathon-load) || exit 1
-echo "$load"
-if ! ok "$load"; then
-  echo "Could not load project '${PROJECT_NAME}'." >&2
-  exit 1
-fi
-
-echo "Project '${PROJECT_NAME}' is loaded."
+echo "Project '${PROJECT_NAME}' is ready in the LoT Editor."

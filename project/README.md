@@ -89,7 +89,7 @@ In **Data Viewer → Publish** (paper-plane icon):
 
 ## 4. Lab notebooks overview
 
-When `load-project` finishes at startup, the `weather-station` project is already open in **LoT Editor** with all 8 notebooks under `project/`:
+When `load-project` finishes at startup, the broker holds the `weather-station` project (added with `-addProject`, not loaded, so nothing is deployed). In **LoT Editor**, right-click `weather-station` → **Pull project from broker** once; the 8 notebooks then appear under `project/`:
 
 | Notebook | Lab | What is inside |
 |---|---|---|
