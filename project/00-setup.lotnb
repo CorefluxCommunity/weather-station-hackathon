@@ -1,13 +1,22 @@
-{
-  "version": 1,
-  "metadata": {
-    "title": "00 — Setup: Variables, Secret & Heat Limit"
-  },
-  "cells": [
-    {
-      "kind": 1,
-      "language": "markdown",
-      "value": "# 00 — Setup: Variables, Secret & Heat Limit\n\nBefore deploying the weather station labs, configure your broker with:\n1. **Four environment variables** and **one secret** (so coordinates and mail settings aren't hardcoded in your LoT code).\n2. **The initial heat alert threshold** (`30` °C) as a retained MQTT message on `config/heat_limit_c`.\n\n---\n\n## Step 1: Set environment variables & secret\n\n1. Click **`root`** in the **top-right corner** of the HUB and select **Command Console**.\n2. Copy and run these five commands **one line at a time** (press **Enter** after each line):\n\n```text\n-setEnv WEATHER_LAT=40.7128\n-setEnv WEATHER_LON=-74.0060\n-setEnv SMTP_HOST=mailpit\n-setEnv SMTP_USER=weather@example.com\n-setSecret SMTP_PASSWORD=any-password\n```\n\n- Keep the `NAME=value` format with **no spaces** around `=`.\n- Your LoT code will read these values using `GET ENV \"...\"` and `GET SECRET \"...\"`.\n- **Verify:** Open **`root` (top right) → Broker Settings → Variables & Secrets** to see your 4 variables and 1 secret (`SMTP_PASSWORD` is write-only, so its value stays hidden).\n\n---\n\n## Step 2: Publish the initial heat limit (`30` °C)\n\nIn Lab 4, the `HeatAlert` Action reads the temperature threshold from `config/heat_limit_c`. Publishing it with **Retain ON** stores the value on the broker so any Action can read it immediately with `GET TOPIC \"config/heat_limit_c\"`.\n\n1. Open **Data Viewer** from the **bottom Dock**.\n2. Click the **Publish** button (paper-plane icon) to open the publish drawer.\n3. Fill in:\n   - **Topic:** `config/heat_limit_c`\n   - **Payload:** `30`\n   - **Retain:** **ON** (important — without Retain, the broker won't remember the value between messages)\n4. Click **Publish**.\n\n---\n\n**Next up:** Open **`01-heartbeat.lotnb`** in the left sidebar to deploy your first LoT Action!"
-    }
-  ]
-}
+[
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "# Setup: Variables and the Heat Limit\n\n**Goal:** Configure your weather station's location, email settings, and default heat threshold before starting the labs.\n\n> **Nothing to run in this notebook:** The lines below are **broker commands** and a **published MQTT message** — not LoT code cells.\n\n**Where things are in the Coreflux HUB:**\n- **Bottom dock:** Opens **Data Viewer**, **Connectors**, **LoT Editor**, and **Dashboards** (hover over any icon to see its name).\n- **Top-right user menu (`root`):** Opens **Command Console**, **Broker Settings**, and **Log out**. Your active licence tier (*Community*, or your event licence) is shown right next to it."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## Step 1: Set Your Variables and Secret\n\nIn the HUB, click **`root`** at the top right, open **Command Console**, and send these commands one at a time:\n\n```\n-setEnv WEATHER_LAT=40.7128\n-setEnv WEATHER_LON=-74.0060\n-setEnv SMTP_HOST=mailpit\n-setEnv SMTP_USER=weather@example.com\n-setSecret SMTP_PASSWORD=any-password\n```\n\nEach command replies with a line of JSON containing `\"success\":true` and *… set successfully*.\n\n- **`WEATHER_LAT` / `WEATHER_LON`** are your station's latitude and longitude (the example coordinates are New York — feel free to use your own city!).\n- Write `NAME=value` with **no spaces** around `=`.\n- **Tip:** You can also add or inspect these visually in **Broker Settings → Variables & Secrets**."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## Step 2: Publish the Initial Heat Limit\n\nOpen **Data Viewer** from the bottom dock, click **Publish** (the paper-plane icon on the left), and publish:\n\n- **Topic:** `config/heat_limit_c`\n- **Payload:** `30`\n- **Retain:** Switched **ON**\n\nThis sets the heat-alert threshold in °C. Because **Retain** is on, the Broker remembers `30` on `config/heat_limit_c` so `HeatAlert` (in Lab 4) can read it at any time."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## Check It Worked\n\n- **Broker Settings → Variables & Secrets:** You should see the four variables under **Variables**, and `SMTP_PASSWORD` under **Secrets** (secret values are encrypted and never shown).\n- **Data Viewer:** In the topic tree on the left, expand `config` → `heat_limit_c` and confirm its value is `30`.\n\n**Next:** Open `01-heartbeat.lotnb`."
+ }
+]

@@ -12,11 +12,11 @@ No prior Coreflux or MQTT experience is required. Everything runs locally on you
 
 All inside a single **Coreflux Broker**, your weather station will:
 
-1. **Fetch live weather** for your coordinates from the [Open-Meteo API](https://open-meteo.com) every 60 seconds (or on demand).
-2. **Validate and convert units** (°C to °F) into a structured `WeatherReading` JSON payload.
+1. **Fetch live weather** for your coordinates from the [Open-Meteo API](https://open-meteo.com) every 5 minutes (or on demand).
+2. **Validate and convert units** (°C to °F and km/h to mph) into a structured `WeatherReading` JSON payload.
 3. **Trigger a heat alert** whenever the temperature crosses a live threshold that operators can adjust on the fly.
 4. **Log history to CSV** and **send an HTML email alert** (captured in a local test inbox) once per heat episode.
-5. **Lock down configuration** so only `root` can change the heat threshold.
+5. **Lock down configuration** so only the `operators` group (and `root`) can change the heat threshold.
 6. **Display a live dashboard** in the Coreflux HUB.
 
 **Estimated time:** ~2 hours for the 6 core labs (plus optional stretch goals).

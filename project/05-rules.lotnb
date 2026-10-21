@@ -1,23 +1,32 @@
-{
-  "version": 1,
-  "metadata": {
-    "title": "Lab 5 — ProtectWeatherConfig Rule"
-  },
-  "cells": [
-    {
-      "kind": 1,
-      "language": "markdown",
-      "value": "# Lab 5 — `ProtectWeatherConfig` Rule\n\nRight now, any authenticated MQTT user can publish to `config/heat_limit_c` and silence or falsify heat alerts. In this lab, you will deploy a **Rule** (`DEFINE RULE`) that restricts publishing under `config/#` to `root` only.\n\n### How `ProtectWeatherConfig` works\n- **`WITH PRIORITY 1`:** Evaluated before the default `AllowAll` rule (which has priority `100` — lower number runs first).\n- **`FOR PublishToBroker`:** Applies only when a client publishes a message to the broker.\n- **`IF USER IS NOT \"root\" AND TOPIC MATCHES \"config/#\" THEN DENY`:** Blocks any non-`root` user from publishing to `config/` or any sub-topic under it.\n\n> **Licence note:** Custom RBAC rules require an **event licence** (Trial / Growth / Enterprise). Activate your `CFLX-…` code in **`root` (top right) → Broker Settings → License → Activation code** before clicking **▷**. If you are on **Community Edition**, you can read through this cell and move straight to **`06-panel.lotnb`**."
-    },
-    {
-      "kind": 2,
-      "language": "lot",
-      "value": "DEFINE RULE ProtectWeatherConfig WITH PRIORITY 1 FOR PublishToBroker\n    IF USER IS NOT \"root\" AND TOPIC MATCHES \"config/#\" THEN\n        DENY\n    ELSE\n        ALLOW\n"
-    },
-    {
-      "kind": 1,
-      "language": "markdown",
-      "value": "### Test it with a non-root user (`bob`)\n\n1. Click **`root` (top right) → Broker Settings → Users & Permissions → Add User** and create user **`bob`** (any password, **Client** role).\n2. Click **▷** on the cell above to deploy `ProtectWeatherConfig`.\n3. Click **`root` (top right) → Switch Broker** and connect as **`bob`** (`broker:1883`).\n   *(Because `bob` is not an admin, the HUB opens in limited mode with **Data Viewer**.)*\n4. In **Data Viewer → Publish**, try publishing `5` (Retain **ON**) to `config/heat_limit_c`. The broker silently drops unauthorized publishes.\n5. Click **`bob` (top right) → Switch Broker**, select your saved **`root` @ `broker:1883`** session, and check `config/heat_limit_c` in **Data Viewer** — it is still **`30`**!\n\n> **Updating a Rule later:** Unlike Actions and Models, re-deploying a Rule with the same name returns `Rule already exists`. Run `-removeRule ProtectWeatherConfig` in **Command Console** before deploying an updated version.\n\n**Next up:** Open **`06-panel.lotnb`** to build the live operator dashboard!"
-    }
-  ]
-}
+[
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "# Lab 5: Protect the Heat Limit with a Rule\n\n**Goal:** Lock down `config/#` so only authorised operators (and `root`) can change `config/heat_limit_c`.\n\n**What you will build:**\n- **`ProtectWeatherConfig` (Rule):** An access-control rule (`DEFINE RULE`) that allows `Publish` to `config/#` only if the user is in the `operators` group or is `root`, and denies everyone else.\n\n> **Licence note:** Custom RBAC / Topic ACL Rules require the **event trial licence** from the organisers (or a Growth / Enterprise licence). If your Broker is on **Community Edition**, you can still follow this lab as a read-along (see the bottom of this notebook)."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 1. Activate the Event Licence\n\nOpen **Broker Settings** (click `root` at the top right) → **License** → **Activation code**, paste the `CFLX-…` code from the organisers, and click **Activate** (or run `-activateLicense CFLX-your-code` in **Command Console**).\n\n- The badge next to `root` at the top right changes from *Community* to your licence tier.\n- Under **Broker Settings → License → Features**, confirm **RBAC / Topic ACL** is ticked.\n- If your licence badge is already active at the top right, skip this step!"
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 2. Create Users and the `operators` Group\n\nA group is created automatically as soon as you add a user to it. Open **Command Console** (`root` at the top right) and send these three commands one by one:\n\n```\n-addUser alice alice-pass-123\n-addUserToGroup alice operators\n-addUser bob bob-pass-123\n```\n\nNow `alice` is in the `operators` group, while `bob` is a regular user outside the group."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 3. Deploy the `ProtectWeatherConfig` Rule\n\n`PRIORITY 100` is the highest priority you can assign to a custom Rule (`0–99` are reserved for the Broker's built-in system rules). Click **▷ (Run Cell)** below — the Broker replies *Rule 'ProtectWeatherConfig' added successfully*."
+ },
+ {
+  "kind": 2,
+  "language": "lot",
+  "value": "DEFINE RULE ProtectWeatherConfig WITH PRIORITY 100 FOR Publish TO TOPIC \"config/#\"\n    IF USER IN GROUP \"operators\" OR USER IS \"root\" THEN\n        ALLOW\n    ELSE\n        DENY"
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## Check It Worked\n\n1. **Connect as `bob`:** Click `root` at the top right → **Log out**. On the connection screen, click **⚙** next to *Weather station* → **Add user**, enter `bob` / `bob-pass-123`, tick **Default** on `bob`'s row, and click **Connect**. (The HUB opens in limited mode with *No SYS* at the top right and fewer dock icons — that is normal for a non-admin user.)\n2. **Try to change the limit as `bob`:** In **Data Viewer → Publish**, publish `5` (with **Retain** ON) to `config/heat_limit_c`. The HUB shows *Sent (delivery unconfirmed)* — MQTT drops unauthorized publishes silently without an error.\n3. **Switch back to `root`:** Log out, click the user chip (*bob*) next to **Connect**, select `root`, and click **Connect**. Check `config/heat_limit_c` in **Data Viewer**: it is **still `30`**! `bob` was denied.\n4. **Optional — test as `alice`:** Connect as `alice` / `alice-pass-123` and publish `5` to `config/heat_limit_c`. Because `alice` is in `operators`, her change succeeds! Remember to set `config/heat_limit_c` back to `30` (Retain ON) as `root` or `alice` afterwards.\n\n**Read-along (Community Edition):** Click ▷ on the Rule cell once anyway to see the Broker's response: *RBAC / Topic Access Control rules require a Growth or Enterprise license*. Without the Rule active, `bob`'s publish of `5` *is* accepted — set the limit back to `30` before moving on to Lab 6.\n\nDocs: [Rule syntax](https://docs.coreflux.org/latest/lot-language/rules/syntax) · [RBAC](https://docs.coreflux.org/latest/lot-language/rules/rbac)."
+ }
+]

@@ -256,11 +256,11 @@ code { font-family: var(--mono); font-size: 0.84em; background: var(--sunk); pad
         <div class="card">
           <p class="card-title">What it does</p>
           <ul class="ticks">
-            <li>Polls the Open-Meteo weather API <b>every 60 seconds</b> (or on demand)</li>
-            <li>Converts <b>°C to °F</b> and packages a clean <b>WeatherReading</b></li>
-            <li>Raises a <b>heat alert</b> against a threshold you can change live</li>
-            <li>Logs every reading to <b>CSV</b> and <b>emails</b> the team on heat alerts</li>
-            <li>Displays everything on a <b>live dashboard</b></li>
+            <li>Asks a weather API for this site <b>every 5 minutes</b></li>
+            <li>Converts <b>°C to °F</b> and <b>km/h to mph</b></li>
+            <li>Raises a <b>heat alert</b> against a limit you can change live</li>
+            <li>Keeps the <b>history</b> and <b>emails</b> the team</li>
+            <li>Shows it on a <b>live dashboard</b></li>
           </ul>
         </div>
       </section>
@@ -285,8 +285,8 @@ code { font-family: var(--mono); font-size: 0.84em; background: var(--sunk); pad
           <p class="card-title">On your machine</p>
           <ul class="ticks">
             <li>One Broker container running locally</li>
-            <li>The <b>Coreflux HUB</b> at <code>http://localhost:3000</code> is your browser workspace</li>
-            <li>Broker, HUB, Mailpit (test inbox), and the <code>weather-station</code> project start together</li>
+            <li>The <b>Coreflux HUB</b> at <code>http://localhost:3000</code> is the window onto it</li>
+            <li>Broker, HUB, Mailpit (a test inbox), and the <code>weather-station</code> project start together</li>
           </ul>
         </div>
         <div class="code"><span class="code-label">terminal</span><pre><code>cd project&#10;docker compose up -d&#10;docker compose wait load-project</code></pre></div>
@@ -300,135 +300,144 @@ code { font-family: var(--mono); font-size: 0.84em; background: var(--sunk); pad
         <div class="tree" aria-label="Topic tree of the weather station">
           <div><span class="t">campus/</span></div>
           <div class="i1"><span class="t">weather/</span></div>
-          <div class="i2"><span class="t">request</span> <span class="d">publish "poll" here to trigger an immediate fetch</span></div>
-          <div class="i2"><span class="t">fetch</span> <span class="d">RequestWeather publishes the query string here</span></div>
-          <div class="i2"><span class="t">raw</span> <span class="d">the Open-Meteo JSON response lands here</span></div>
-          <div class="i2"><span class="t">reading</span> <span class="d">the clean, converted WeatherReading JSON</span></div>
-          <div class="i2"><span class="t">alerts/heat_active</span> <span class="d">HeatAlert's retained state: "on" or "off"</span></div>
-          <div class="i2"><span class="t">alerts/heat</span> <span class="d">fires once when a heat wave starts; triggers the email</span></div>
+          <div class="i2"><span class="t">request</span> <span class="d">RequestWeather asks for new data</span></div>
+          <div class="i2"><span class="t">raw</span> <span class="d">the weather API answer lands here</span></div>
+          <div class="i2"><span class="t">reading</span> <span class="d">the clean, converted reading</span></div>
+          <div class="i2"><span class="t">errors</span> <span class="d">weather API errors, instead of a reading</span></div>
+          <div class="i2"><span class="t">alerts/heat_active</span> <span class="d">HeatAlert's verdict, on or off</span></div>
+          <div class="i2"><span class="t">alerts/heat</span> <span class="d">the reading that starts a heat episode; the email goes from here</span></div>
           <div><span class="t">config/</span></div>
-          <div class="i1"><span class="t">heat_limit_c</span> <span class="d">retained threshold in °C (default 30)</span></div>
+          <div class="i1"><span class="t">heat_limit_c</span> <span class="d">the limit an operator can change</span></div>
         </div>
-        <p>The studs sit in a hierarchy you read like a folder path. That hierarchy is your <b>Unified Namespace (UNS)</b>. In MQTT wildcards, <code>+</code> matches one level and <code>#</code> matches everything below it.</p>
+        <p>The studs sit in a grid you read like an address. That grid is the <b>Unified Namespace</b> (UNS). <code>campus/weather/+</code> is one level. <code>campus/#</code> is everything below it.</p>
       </section>
 
       <section class="step" data-focus="actions" data-name="Actions" hidden>
         <p class="kicker"><span class="chip"><i style="background:#fb6107"></i>Actions</span>Piece 3 of 7</p>
         <h2>An Action is one brick, one job</h2>
-        <p class="lead">It starts on a trigger: a timer (<code>ON EVERY ...</code>) or a message arriving on a topic (<code>ON TOPIC ...</code>). The weather station uses four.</p>
+        <p class="lead">It starts on a trigger: a timer, a message on a topic, or a call from another Action. The weather station uses four.</p>
         <div class="card">
           <p class="card-title">The four Actions</p>
           <ul class="ticks">
-            <li><b>Heartbeat</b> (Lab 1) runs every 5 seconds so you can see the Broker is alive</li>
-            <li><b>ProcessWeather</b> (Lab 2) runs when raw JSON arrives, converts °C to °F, and publishes the Model</li>
-            <li><b>RequestWeather</b> (Lab 3) runs every 60 seconds (or on <code>campus/weather/request</code>) to ask for weather</li>
-            <li><b>HeatAlert</b> (Lab 4) compares the temperature to <code>config/heat_limit_c</code> and raises an alert</li>
+            <li><b>RequestWeather</b> runs every 5 minutes and asks for new weather</li>
+            <li><b>ProcessWeather</b> runs when the raw answer arrives and builds the reading</li>
+            <li><b>HeatAlert</b> reads each reading and decides; the beacon lights on a heat alert</li>
+            <li><b>Heartbeat</b> runs every 5 seconds so you can see the Broker is alive</li>
           </ul>
         </div>
-        <div class="code"><span class="code-label">LoT</span><pre><code class="lot">DEFINE ACTION Heartbeat
-ON EVERY 5 SECONDS DO
-    PUBLISH TOPIC "campus/weather/heartbeat" WITH "ok"
+        <div class="code"><span class="code-label">LoT</span><pre><code class="lot">DEFINE ACTION RequestWeather
+ON EVERY 5 MINUTES DO
+    PUBLISH TOPIC "campus/weather/request" WITH "poll"
 
 DEFINE ACTION HeatAlert
 ON TOPIC "campus/weather/reading" DO
     SET "temp_c" WITH (GET JSON "temperature_c" IN PAYLOAD AS DOUBLE)
-    SET "limit" WITH (GET TOPIC "config/heat_limit_c" AS DOUBLE)
-    SET "active" WITH (GET TOPIC "campus/weather/alerts/heat_active" AS STRING)
-    IF {temp_c} &gt; {limit} THEN
-        IF {active} != "on" THEN
-            KEEP TOPIC "campus/weather/alerts/heat_active" WITH "on"
-            PUBLISH TOPIC "campus/weather/alerts/heat" WITH PAYLOAD
+    SET "limit_raw" WITH GET TOPIC "config/heat_limit_c"
+    SET "was" WITH GET TOPIC "campus/weather/alerts/heat_active"
+    IF {limit_raw} == EMPTY THEN
+        PUBLISH TOPIC "campus/weather/alerts/heat_active" WITH "off"
     ELSE
-        KEEP TOPIC "campus/weather/alerts/heat_active" WITH "off"</code></pre></div>
-        <p class="note"><code>KEEP TOPIC</code> publishes a retained message, so <code>heat_active</code> remembers whether an alert is already active. That way, the email on <code>campus/weather/alerts/heat</code> is sent only once when a heat wave starts (<code>project/01-heartbeat.lotnb</code> to <code>04-heat-alert-history-email.lotnb</code>).</p>
+        SET "heat_limit" WITH (GET TOPIC "config/heat_limit_c" AS DOUBLE)
+        IF {temp_c} &gt; {heat_limit} THEN
+            IF {was} != "on" THEN
+                PUBLISH TOPIC "campus/weather/alerts/heat" WITH PAYLOAD
+            PUBLISH TOPIC "campus/weather/alerts/heat_active" WITH "on"
+        ELSE
+            PUBLISH TOPIC "campus/weather/alerts/heat_active" WITH "off"</code></pre></div>
+        <p class="note">The limit lives on a topic, so an operator changes it live; while it is empty the alert stays off. The email goes out only when the state turns from off to on. RequestWeather only says <code>poll</code>: the Connector knows the site. Heartbeat is <code>ON EVERY 5 SECONDS DO</code>. Each Action is its own cell, in the notebook of the lab that builds it (<code>project/01-heartbeat.lotnb</code> to <code>04-heat-alert-history-email.lotnb</code>).</p>
       </section>
 
       <section class="step" data-focus="routes" data-name="Connectors" hidden>
         <p class="kicker"><span class="chip"><i style="background:#7b2ff7"></i>Connectors</span>Piece 4 of 7</p>
         <h2>A Connector is the piece with an antenna</h2>
-        <p class="lead">It reaches outside the Broker: a web API, a CSV file, an email server, a PLC, or a database. The weather station uses three.</p>
+        <p class="lead">It reaches outside the Broker: a web API, a file, email, a PLC, a database. The weather station uses three.</p>
         <div class="card">
           <p class="card-title">The three Connectors</p>
           <ul class="ticks">
-            <li><b>CampusWeather</b> (<code>TYPE REST</code>, Lab 3): calls Open-Meteo and publishes JSON to <code>campus/weather/raw</code></li>
-            <li><b>WeatherHistory</b> (<code>TYPE CSV</code>, Lab 4): appends every reading to <code>campus-weather.csv</code></li>
-            <li><b>HeatMail</b> (<code>TYPE EMAIL</code>, Lab 4): sends an HTML alert email to Mailpit</li>
+            <li><b>Weather API</b>, REST: the antenna on top of the station, data comes in</li>
+            <li><b>History</b>, file storage: the cylinder, every reading is a line in a CSV file</li>
+            <li><b>Email</b>: the mailbox, the team hears about a heat alert</li>
           </ul>
         </div>
-        <div class="code"><span class="code-label">LoT · Broker 2.22.0</span><pre><code class="lot">DEFINE CONNECTOR CampusWeather WITH TYPE REST
-    ADD REST_CONFIG
-        WITH BASE_URL "https://api.open-meteo.com"
-        WITH TIMEOUT 10
-        WITH VERIFY_SSL TRUE
-    ADD EVENT FetchCurrent
-        WITH SOURCE_TOPIC "campus/weather/fetch"
+        <div class="code"><span class="code-label">LoT · Broker 2.22.0</span><pre><code class="lot">DEFINE CONNECTOR CampusWeather WITH TYPE REST_API
+    ADD REST_API_CONFIG
+        WITH BASE_ADDRESS "https://api.open-meteo.com"
+        WITH ENABLE_CLIENT "true"
+        WITH USE_SSL "true"
+    ADD EVENT GetCurrentWeather
+        WITH SOURCE_TOPIC "campus/weather/request"
         WITH DESTINATION_TOPIC "campus/weather/raw"
         WITH METHOD "GET"
-        WITH ENDPOINT "/v1/forecast"
-        WITH QUERY_PARAMS_FROM_PAYLOAD TRUE</code></pre></div>
-        <p class="note"><code>RequestWeather</code> reads <code>WEATHER_LAT</code> and <code>WEATHER_LON</code> via <code>GET ENV</code> and publishes the query string to <code>campus/weather/fetch</code>. <code>CampusWeather</code> calls Open-Meteo and publishes the response to <code>campus/weather/raw</code>.</p>
+        WITH ENDPOINT "/v1/forecast?latitude={env.WEATHER_LAT}&amp;longitude={env.WEATHER_LON}&amp;current=temperature_2m,wind_speed_10m&amp;wind_speed_unit=kmh"</code></pre></div>
+        <p class="note">The site comes from the <code>WEATHER_LAT</code> and <code>WEATHER_LON</code> environment variables, so RequestWeather only has to say <code>poll</code>. The history Connector writes a CSV file, and the email Connector sends to Mailpit, the test inbox in the lesson's Docker setup. <code>DEFINE ROUTE</code> is the older spelling of <code>DEFINE CONNECTOR</code>; both work.</p>
       </section>
 
       <section class="step" data-focus="models" data-name="Models" hidden>
         <p class="kicker"><span class="chip"><i style="background:#12b5c6"></i>Models</span>Piece 5 of 7</p>
         <h2>A Model is one brick per field</h2>
-        <p class="lead">The manual says which brick comes next. Each brick is one field and the color is its data type, so every reading published on <code>campus/weather/reading</code> has the exact same JSON shape.</p>
+        <p class="lead">The manual says which brick comes next. Each brick is one field and the color is the type, so every reading has the same shape.</p>
         <div class="card">
-          <p class="card-title">WeatherReading (Lab 2)</p>
+          <p class="card-title">WeatherReading, step by step</p>
           <ol class="ticks">
-            <li><code>station</code> (<code>STRING</code>, constant <code>"campus-main"</code>)</li>
-            <li><code>temperature_c</code>, <code>temperature_f</code>, and <code>wind_kmh</code> (<code>DOUBLE</code>)</li>
-            <li><code>weather_code</code> (<code>INT</code>) and <code>observed_at</code> (<code>STRING</code>, UTC timestamp)</li>
-            <li><code>ProcessWeather</code> populates the sub-topics and runs <code>PUBLISH MODEL WeatherReading</code></li>
+            <li><code>temperature_c</code> and <code>temperature_f</code>, numbers</li>
+            <li><code>wind_kmh</code> and <code>wind_mph</code>, numbers</li>
+            <li><code>timestamp</code>, text</li>
+            <li>ProcessWeather fills it and publishes it as one document</li>
           </ol>
         </div>
         <div class="code"><span class="code-label">LoT</span><pre><code class="lot">DEFINE MODEL WeatherReading COLLAPSED
-    ADD STRING "station" WITH "campus-main"
-    ADD DOUBLE "temperature_c" WITH TOPIC "campus/weather/reading/temperature_c"
-    ADD DOUBLE "temperature_f" WITH TOPIC "campus/weather/reading/temperature_f"
-    ADD DOUBLE "wind_kmh" WITH TOPIC "campus/weather/reading/wind_kmh"
-    ADD INT "weather_code" WITH TOPIC "campus/weather/reading/weather_code"
-    ADD STRING "observed_at" WITH TIMESTAMP "UTC"</code></pre></div>
-        <p class="note"><code>COLLAPSED</code> bundles all fields into one flat JSON payload when <code>ProcessWeather</code> runs <code>PUBLISH MODEL WeatherReading TO "campus/weather/reading"</code> (see <code>project/02-model-processweather.lotnb</code>).</p>
+    ADD DOUBLE "temperature_c"
+    ADD DOUBLE "temperature_f"
+    ADD DOUBLE "wind_kmh"
+    ADD DOUBLE "wind_mph"
+    ADD STRING "timestamp"
+
+PUBLISH MODEL WeatherReading TO "campus/weather/reading" WITH
+    temperature_c = {temp_c}
+    temperature_f = {temp_f}
+    wind_kmh = {wind_kmh}
+    wind_mph = {wind_mph}
+    timestamp = TIMESTAMP "UTC"</code></pre></div>
+        <p class="note"><code>COLLAPSED</code> publishes when an Action asks, with <code>PUBLISH MODEL</code>. The full Action is ProcessWeather, in the project folder.</p>
       </section>
 
       <section class="step" data-focus="rules" data-name="Rules" hidden>
         <p class="kicker"><span class="chip"><i style="background:#d99f01"></i>Rules</span>Piece 6 of 7</p>
         <h2>Rules are the building frame</h2>
-        <p class="lead">The frame keeps pieces off the studs they do not belong on. A Rule decides which users may publish or subscribe to which topics.</p>
+        <p class="lead">The frame holds the build to the plan and keeps pieces off the studs they do not belong on. A Rule decides who may publish or subscribe on which topics.</p>
         <div class="card">
-          <p class="card-title">In the weather station (Lab 5)</p>
+          <p class="card-title">In the weather station</p>
           <ul class="ticks">
-            <li>Everyone can <b>read</b> the weather topics</li>
-            <li>Only <code>root</code> can publish to <code>config/#</code> (including <code>config/heat_limit_c</code>)</li>
-            <li>Any publish to <code>config/#</code> from another user (like <code>bob</code>) is silently dropped</li>
+            <li>Everyone can <b>read</b> the weather</li>
+            <li>Only the <b>operators</b> group changes <code>config/heat_limit_c</code></li>
+            <li>A publish from anyone else is refused by the Broker</li>
           </ul>
         </div>
-        <div class="code"><span class="code-label">LoT</span><pre><code class="lot">DEFINE RULE ProtectWeatherConfig WITH PRIORITY 1 FOR PublishToBroker
-    IF USER IS NOT "root" AND TOPIC MATCHES "config/#" THEN
-        DENY
+        <div class="code"><span class="code-label">LoT</span><pre><code class="lot">DEFINE RULE ProtectWeatherConfig WITH PRIORITY 100 FOR Publish TO TOPIC "config/#"
+    IF USER IN GROUP "operators" OR USER IS "root" THEN
+        ALLOW
     ELSE
-        ALLOW</code></pre></div>
-        <p class="note">Lower priority numbers run first: <code>PRIORITY 1</code> is evaluated before the default <code>AllowAll</code> rule (priority 100). Custom Rules require an event licence (activate your <code>CFLX-…</code> code in <b>Broker Settings → License</b>); on Community Edition you can read along and continue to Lab 6.</p>
+        DENY</code></pre></div>
+        <p class="note">Priority 100 is the strongest number you can write. Writing your own Rules needs a licence: the event trial licence from the organisers (one seat per broker), or Growth or Enterprise; on Community Edition the Broker refuses the Rule. Deploy it with Run Cell or <code>-addRule</code>. The Broker's own rules always apply.</p>
       </section>
 
       <section class="step" data-focus="panels" data-name="Panels" hidden>
         <p class="kicker"><span class="chip"><i style="background:#1f2629"></i>Panels</span>Piece 7 of 7</p>
         <h2>A Panel is the box</h2>
-        <p class="lead">The box shows the finished build. A Panel is a live operator dashboard defined in LoT and rendered in the HUB's <b>Dashboards</b> window — with stat cards and badges bound directly to MQTT topics.</p>
+        <p class="lead">The box shows the finished build. A Panel is the live screen people look at: gauges, values, the heat indicator, each bound to a topic. The same screen can be built in HUB Dashboards.</p>
         <div class="code"><span class="code-label">LoT</span><pre><code class="lot">DEFINE PANEL CampusWeather
+    WITH VISIBILITY PUBLIC
+    WITH STATE PUBLISHED
     WITH TITLE "Campus Weather"
-    WITH ICON "cloud-sun"
-    WITH REFRESH 5
+    WITH LAYOUT "grid" COLUMNS 4 ROWS 1
 
-    LAYOUT USING GRID WITH COLUMNS 12
-        SECTION "Current Conditions" WITH ICON "thermometer" COLLAPSIBLE FALSE
-            WIDGET "Temperature (°C)" AS STAT
-                WITH SOURCE TOPIC "campus/weather/reading/temperature_c"
-                WITH UNIT "°C"
-                WITH DECIMALS 1
-                WITH SPAN 4</code></pre></div>
-        <p class="note"><code>project/06-panel.lotnb</code> adds the °F card, Wind Speed card, and a Heat Alert <code>BADGE</code> widget that switches between green (<code>Normal</code>) and red (<code>HEAT ALERT</code>).</p>
+    ADD COMPONENT "TempGauge" WITH TYPE "gauge"
+        AT COLUMN 1 ROW 1
+        SET LABEL "Temperature"
+        SET RANGE FROM -20 TO 45
+        SET UNIT "°C"
+        BIND VALUE TO TOPIC "campus/weather/reading" WITH JSON_PATH "temperature_c"</code></pre></div>
+        <p class="note">The Panel in <code>project/06-panel.lotnb</code> adds the Fahrenheit value, the wind in km/h and the heat state, one component each.</p>
       </section>
 
       <section class="step" data-focus="all" data-flow="off" data-replay="on" data-name="Put together" hidden>
@@ -439,45 +448,52 @@ ON TOPIC "campus/weather/reading" DO
           <tbody>
             <tr><td><span class="sw" style="background:#25353b"></span>Broker</td><td>The baseplate</td><td>Everything sticks to it. LoT runs on it.</td></tr>
             <tr><td><span class="sw" style="background:#35464c"></span>Topics</td><td>The studs, where pieces connect</td><td><code>campus/weather/reading</code> and the rest</td></tr>
-            <tr><td><span class="sw" style="background:#fb6107"></span>Actions</td><td>The bricks</td><td>Heartbeat, ProcessWeather, RequestWeather, HeatAlert</td></tr>
-            <tr><td><span class="sw" style="background:#7b2ff7"></span>Connectors</td><td>The antenna pieces</td><td>CampusWeather (REST), WeatherHistory (CSV), HeatMail (EMAIL)</td></tr>
-            <tr><td><span class="sw" style="background:#12b5c6"></span>Models</td><td>The field bricks, from the manual</td><td>WeatherReading: typed JSON payload</td></tr>
-            <tr><td><span class="sw" style="background:#d99f01"></span>Rules</td><td>The building frame</td><td>ProtectWeatherConfig: only <code>root</code> changes <code>config/#</code></td></tr>
-            <tr><td><span class="sw" style="background:#1f2629"></span>Panels</td><td>The box</td><td>Campus Weather live dashboard</td></tr>
+            <tr><td><span class="sw" style="background:#fb6107"></span>Actions</td><td>The bricks</td><td>RequestWeather, ProcessWeather, HeatAlert, Heartbeat</td></tr>
+            <tr><td><span class="sw" style="background:#7b2ff7"></span>Connectors</td><td>The antenna pieces</td><td>Weather API in. The cylinder and the mailbox out.</td></tr>
+            <tr><td><span class="sw" style="background:#12b5c6"></span>Models</td><td>The field bricks, from the manual</td><td>WeatherReading: five bricks, color is the type</td></tr>
+            <tr><td><span class="sw" style="background:#d99f01"></span>Rules</td><td>The building frame</td><td>Only operators change the heat limit</td></tr>
+            <tr><td><span class="sw" style="background:#1f2629"></span>Panels</td><td>The box</td><td>Campus Weather</td></tr>
           </tbody>
         </table>
         <div class="card">
-          <p class="card-title">Ready to build?</p>
-          <p>Start with <code>project/00-setup.lotnb</code> to set your variables and heat limit, then deploy your first Action in <code>project/01-heartbeat.lotnb</code>!</p>
+          <p class="card-title">Lab 1</p>
+          <p><b>Your first brick.</b> The Heartbeat Action in <code>project/01-heartbeat.lotnb</code>, watched live in the HUB. It publishes every 5 seconds.</p>
         </div>
       </section>
 
       <section class="step" data-focus="all" data-flow="off" data-thing="on" data-name="One Thing" hidden>
-        <p class="kicker"><span class="chip"><i style="background:#7b2ff7"></i>DEFINE THING</span>Stretch Goal 6</p>
-        <h2>The whole station as one Thing</h2>
-        <p class="lead">In Broker 2.22 (technical preview), you can bundle properties, a <code>CONNECTOR</code>, a <code>MODEL</code>, and <code>ON EVERY</code> / <code>ON TOPIC</code> logic into a single <b>Thing</b> definition.</p>
-        <div class="code"><span class="code-label">LoT · Broker 2.22.0</span><pre><code class="lot">DEFINE THING CampusStation
-    WITH DESCRIPTION "Campus weather station"
-    PROPERTY "station_id" TYPE STRING DEFAULT "campus-main"
-    PROPERTY "temperature_c" TYPE DOUBLE UNIT "°C"
-    PROPERTY "temperature_f" TYPE DOUBLE UNIT "°F"
-
-    CONNECTOR OpenMeteo TYPE REST
-        WITH BASE_URL "https://api.open-meteo.com"
-        ADD EVENT FetchCurrent
-            WITH SOURCE_TOPIC "campus/weather/thing/fetch"
-            WITH DESTINATION_TOPIC "campus/weather/thing/raw"
+        <p class="kicker"><span class="chip"><i style="background:#7b2ff7"></i>DEFINE THING</span>The recipe</p>
+        <h2>The whole station is one Thing</h2>
+        <p class="lead">The antenna, the RequestWeather, ProcessWeather and HeatAlert bricks and the five Model bricks come off the plate together. In LoT that assembled build is a <b>Thing</b>: the recipe is written once as a template, and each site is one line that fills in the blanks.</p>
+        <div class="code"><span class="code-label">LoT · Broker 2.22.0</span><pre><code class="lot">DEFINE THING TEMPLATE WeatherStation
+    WITH PARAM lat
+    WITH PARAM lon
+    WITH CONNECTOR Weather WITH TYPE REST_API
+        ADD REST_API_CONFIG
+            WITH BASE_ADDRESS "https://api.open-meteo.com"
+            WITH ENABLE_CLIENT "true"
+            WITH USE_SSL "true"
+        ADD EVENT GetCurrentWeather
+            WITH SOURCE_TOPIC "{{path}}/request"
+            WITH DESTINATION_TOPIC "{{path}}/raw"
             WITH METHOD "GET"
-            WITH ENDPOINT "/v1/forecast"
-            WITH QUERY_PARAMS_FROM_PAYLOAD TRUE
+            WITH ENDPOINT "/v1/forecast?latitude={{lat}}&amp;longitude={{lon}}&amp;current=temperature_2m,wind_speed_10m"
+    WITH MODEL Reading COLLAPSED
+        ADD DOUBLE "temperature_c"
+        ADD DOUBLE "temperature_f"
+        ADD STRING "timestamp"
+    WITH ACTION Request
+    ON EVERY 5 MINUTES DO
+        PUBLISH TOPIC "{{path}}/request" WITH "poll"
+    WITH ACTION Process
+    ON TOPIC "{{path}}/raw" DO
+        PUBLISH MODEL Reading TO "{{path}}/reading" WITH
+            temperature_c = (GET JSON "current.temperature_2m" IN PAYLOAD AS DOUBLE)
 
-    MODEL Reading COLLAPSED
-        ADD STRING "station" WITH {station_id}
-        ADD DOUBLE "temperature_c" WITH {temperature_c}
-        ADD DOUBLE "temperature_f" WITH {temperature_f}
-
-    EMITS Reading TO "campus/weather/thing/reading"</code></pre></div>
-        <p class="note">Labs 1–6 build the station piece by piece so you learn each building block. Once you finish Lab 6, open <code>project/07-stretch.lotnb</code> to try deploying the complete <code>DEFINE THING CampusStation</code>!</p>
+DEFINE THING campus OF WeatherStation
+    WITH PARAM lat "40.7128"
+    WITH PARAM lon "-74.0060"</code></pre></div>
+        <p class="note">One template, one line per site, and the Broker owns every piece it expands. <code>DEFINE THING</code> is new in recent Broker releases; 2.14 and earlier do not have it. Day 1 builds the same station piece by piece.</p>
       </section>
     </div>
   </main>

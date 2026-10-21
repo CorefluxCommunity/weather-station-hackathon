@@ -1,23 +1,42 @@
-{
-  "version": 1,
-  "metadata": {
-    "title": "07 — Stretch Goals"
-  },
-  "cells": [
-    {
-      "kind": 1,
-      "language": "markdown",
-      "value": "# 07 — Stretch Goals\n\nFinished Labs 1–6? Pick any of the 6 optional challenges below, write your LoT definitions in a new cell (or edit the existing notebooks), and deploy!\n\n---\n\n### 1. High-wind alert\nAdd a retained threshold on `config/wind_limit_kmh` (for example, `50`) and create a `WindAlert` Action that publishes to `campus/weather/alerts/wind` with a retained `campus/weather/alerts/wind_active` flag — following the same deduplication pattern as `HeatAlert` in Lab 4.\n\n### 2. Multi-city stations\nPoll a second city (e.g. Lisbon or Tokyo) into `campus/weather/<city>/reading`. Parameterize the topic path or add a second `EVENT` to the `CampusWeather` REST Connector.\n\n### 3. Rolling 5-reading average\nKeep the last 5 temperatures in retained topics (e.g. `campus/weather/window/1` … `5`) and publish the rolling mean to `campus/weather/reading/temperature_c_avg5`.\n\n### 4. Richer HTML email\nEdit `project/templates/heat-alert.html` on your computer to include `wind_kmh` and `weather_code` using `{value.json.wind_kmh}` and `{value.json.weather_code}`, or add a second `EVENT` on `HeatMail` that sends an **all-clear** email when `heat_active` transitions from `\"on\"` back to `\"off\"`.\n\n### 5. Expand the Panel\nAdd a `GAUGE` or `LINE` chart for `campus/weather/reading/temperature_c` to `CampusWeather` in `06-panel.lotnb`, plus a second `BADGE` for `wind_active`.\n\n---\n\n### 6. Refactor the station into a `DEFINE THING`\n\nBroker 2.22 includes a technical preview of **`DEFINE THING`** — a single unified declaration that bundles a device's properties, `CONNECTOR`, `MODEL` (`EMITS`), and `ON EVERY` / `ON` logic together.\n\nReplace the separate `CampusWeather` Connector + `WeatherReading` Model + `ProcessWeather` / `RequestWeather` Actions with one `DEFINE THING CampusStation` publishing to `campus/weather/thing/reading`.\n\n> **Community Edition note:** A `THING` creates its own internal Connector (`CampusStation_OpenMeteo`). Because Community Edition allows up to **3 Connectors** total, remove one existing Connector first in **Command Console** (`-removeConnector WeatherHistory`) if you haven't activated an event licence.\n\nClick **▷** on the starter cell below to try `DEFINE THING`:"
-    },
-    {
-      "kind": 2,
-      "language": "lot",
-      "value": "DEFINE THING CampusStation\n    WITH DESCRIPTION \"Campus weather station\"\n    WITH LOCATION \"Main Quad\"\n\n    PROPERTY \"station_id\" TYPE STRING DEFAULT \"campus-main\"\n    PROPERTY \"temperature_c\" TYPE DOUBLE UNIT \"°C\"\n    PROPERTY \"temperature_f\" TYPE DOUBLE UNIT \"°F\"\n    PROPERTY \"wind_kmh\" TYPE DOUBLE UNIT \"km/h\"\n    PROPERTY \"weather_code\" TYPE INT\n\n    CONNECTOR OpenMeteo TYPE REST\n        WITH BASE_URL \"https://api.open-meteo.com\"\n        WITH TIMEOUT 10\n        WITH VERIFY_SSL TRUE\n        ADD EVENT FetchCurrent\n            WITH SOURCE_TOPIC \"campus/weather/thing/fetch\"\n            WITH DESTINATION_TOPIC \"campus/weather/thing/raw\"\n            WITH METHOD \"GET\"\n            WITH ENDPOINT \"/v1/forecast\"\n            WITH QUERY_PARAMS_FROM_PAYLOAD TRUE\n\n    MODEL Reading COLLAPSED\n        ADD STRING \"station\" WITH {station_id}\n        ADD DOUBLE \"temperature_c\" WITH {temperature_c}\n        ADD DOUBLE \"temperature_f\" WITH {temperature_f}\n        ADD DOUBLE \"wind_kmh\" WITH {wind_kmh}\n        ADD INT \"weather_code\" WITH {weather_code}\n        ADD STRING \"observed_at\" WITH TIMESTAMP \"UTC\"\n\n    EMITS Reading TO \"campus/weather/thing/reading\"\n\n    ON EVERY 60 SECONDS DO\n        SET \"lat\" WITH (GET ENV \"WEATHER_LAT\")\n        SET \"lon\" WITH (GET ENV \"WEATHER_LON\")\n        PUBLISH TOPIC \"campus/weather/thing/fetch\" WITH \"?latitude=\" + {lat} + \"&longitude=\" + {lon} + \"&current=temperature_2m,wind_speed_10m,weather_code\"\n\n    ON TOPIC \"campus/weather/thing/raw\" DO\n        SET \"temperature_c\" WITH (GET JSON \"current.temperature_2m\" IN PAYLOAD AS DOUBLE)\n        SET \"wind_kmh\" WITH (GET JSON \"current.wind_speed_10m\" IN PAYLOAD AS DOUBLE)\n        SET \"weather_code\" WITH (GET JSON \"current.weather_code\" IN PAYLOAD AS INT)\n        SET \"temperature_f\" WITH (({temperature_c} * 1.8) + 32)\n        EMIT Reading\n"
-    },
-    {
-      "kind": 1,
-      "language": "markdown",
-      "value": "### Two handy LoT tips for the stretch goals\n\n1. **`GET TOPIC` vs. `PAYLOAD`:**\n   - Inside `ON TOPIC \"x\" DO`, use **`PAYLOAD`** (or `GET JSON \"field\" IN PAYLOAD AS DOUBLE`) to read the message that triggered the Action.\n   - Use **`GET TOPIC \"other/topic\" AS STRING`** only to read a **different** topic's retained value.\n2. **Keep arithmetic expressions parenthesized:**\n   - Write `SET \"temp_f\" WITH (({temp_c} * 1.8) + 32)`.\n   - Avoid chaining another operator onto a parenthesized expression without outer parentheses (for example, `({a} + {b}) / 2` will fail to parse — write `(({a} + {b}) / 2)` instead)."
-    }
-  ]
-}
+[
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "# Stretch Goals\n\nFinished Labs 1–6? Pick any challenge below! Add new LoT code cells right inside this notebook (one `DEFINE` per cell, giving each new entity its own unique name). If a challenge modifies an existing piece from an earlier lab (like `CampusWeather` or the `CampusWeather` panel), edit the cell in that earlier lab's notebook and click **▷ (Run Cell)** again."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 1. Protect the Alert and Raw Topics (Event Licence)\n\nRight now, any connected MQTT client can publish fake data to `campus/weather/raw` (creating bogus readings and CSV rows) or publish directly to `campus/weather/alerts/heat` (sending fake alert emails). Write a **Rule** that blocks untrusted clients from publishing to those topics.\n\n- **Hint:** Think carefully about who *must* still be allowed to publish there — the `CampusWeather` Connector writes to `raw`, and `HeatAlert` writes to `alerts/heat`.\n- **Verify:** Connect as `bob` and confirm his publish to `raw` or `alerts/heat` is refused, while publishing `poll` to `campus/weather/request` still produces a reading and an alert. (If readings stop working, remove your Rule with `-removeRule <Name>` in Command Console.)"
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 2. Wind Alert\n\nCreate a `config/wind_limit_kmh` retained topic and a `WindAlert` Action (modeled after `HeatAlert` in Lab 4) that compares `wind_kmh` against `config/wind_limit_kmh` and publishes `\"on\"` or `\"off\"` to `campus/weather/alerts/wind_active`."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 3. Daily Min and Max Temperatures\n\nWrite an Action triggered on `campus/weather/reading` that tracks the day's lowest and highest temperatures using `KEEP TOPIC \"campus/weather/stats/min\" WITH {t}` (`KEEP TOPIC` stores the value on the Broker without broadcasting a publish; read it back with `GET TOPIC`).\n\nThen publish the daily summary once a day at `23:59:00` using two timer Actions: `ON EVERY WEEKDAY AT \"23:59:00\"` and `ON EVERY WEEKEND AT \"23:59:00\"` (note: LoT uses `WEEKDAY` / `WEEKEND` rather than `ON EVERY DAY AT`)."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 4. Poll a Second Site\n\nAdd a second `ADD EVENT` block to `CampusWeather` (in `03-campus-weather.lotnb`) with its own request and raw topics (for example, `campus/weather/london/request` and `campus/weather/london/raw`) and fixed latitude/longitude coordinates in its `ENDPOINT`."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 5. Show More on the Dashboard Panel\n\nExpand the `CampusWeather` panel in `06-panel.lotnb` to display wind speed in **mph** and the **UTC timestamp** of the last reading:\n- Widen the grid layout (`WITH LAYOUT \"grid\" COLUMNS 6 ROWS 1`).\n- Add two more components at `COLUMN 5` and `COLUMN 6`, bound to `campus/weather/reading` with `WITH JSON_PATH \"wind_mph\"` and `WITH JSON_PATH \"timestamp\"`."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 6. One Thing per Site (`DEFINE THING TEMPLATE`)\n\nIn Broker 2.22, you can package the entire weather station as a reusable **`DEFINE THING TEMPLATE`** (shown on the final slide of `index.html`), so spinning up a second site takes just one line!\n\n- Add a new code cell here containing `DEFINE THING TEMPLATE WeatherStation` and `DEFINE THING campus OF WeatherStation`, then run it with **▷**: the Broker replies *Applied Things 'WeatherStation', 'campus'*.\n- The Thing's topics are prefixed with its instance name (`campus/request`, `campus/raw`, `campus/reading`) — publish `poll` to `campus/request` to test it.\n- **Important:** Its Connector needs the same settings as `CampusWeather` (`WITH ENABLE_CLIENT \"true\"`, `WITH USE_SSL \"true\"`, `WITH METHOD \"GET\"`). Because this creates a **4th Connector**, on Community Edition (which allows 3 Connectors) remove one first (`-removeConnector <Name>`) or activate your event licence."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## Two LoT Quirks to Keep in Mind\n\n- **Use `\"on\"`/`\"off\"` instead of `\"true\"`/`\"false\"`:** LoT parses the string `\"false\"` as a boolean literal, which can cause string comparisons in an Action to fail.\n- **Arithmetic associativity:** Avoid putting a multiplication in parentheses after a division, such as `{a} / ({b} * {c})` — LoT evaluates arithmetic left-to-right. Instead, divide in two steps: `SET \"x\" WITH ({a} / {b})`, then `({x} / {c})`."
+ }
+]

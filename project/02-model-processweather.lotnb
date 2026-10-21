@@ -1,33 +1,32 @@
-{
-  "version": 1,
-  "metadata": {
-    "title": "Lab 2 — WeatherReading Model & ProcessWeather"
-  },
-  "cells": [
-    {
-      "kind": 1,
-      "language": "markdown",
-      "value": "# Lab 2 — `WeatherReading` Model & `ProcessWeather` Action\n\nIn this lab, you will transform a raw JSON payload from the Open-Meteo weather API into a clean, typed reading on `campus/weather/reading`.\n\n### Cell 1: `WeatherReading` Model\nA **Model** defines the shape and data types of a message.\n- `COLLAPSED` means that when you publish this Model to a topic (like `campus/weather/reading`), the broker publishes **one flat JSON object** containing all 6 fields.\n- Each `ADD <TYPE> \"field\"` line declares a field name and how it is populated (`WITH TOPIC` copies a value published to a child sub-topic; `WITH TIMESTAMP \"UTC\"` stamps the current UTC time automatically).\n\nClick **▷** on the cell below to deploy `WeatherReading` first:"
-    },
-    {
-      "kind": 2,
-      "language": "lot",
-      "value": "DEFINE MODEL WeatherReading COLLAPSED\n    ADD STRING \"station\" WITH \"campus-main\"\n    ADD DOUBLE \"temperature_c\" WITH TOPIC \"campus/weather/reading/temperature_c\"\n    ADD DOUBLE \"temperature_f\" WITH TOPIC \"campus/weather/reading/temperature_f\"\n    ADD DOUBLE \"wind_kmh\" WITH TOPIC \"campus/weather/reading/wind_kmh\"\n    ADD INT \"weather_code\" WITH TOPIC \"campus/weather/reading/weather_code\"\n    ADD STRING \"observed_at\" WITH TIMESTAMP \"UTC\"\n"
-    },
-    {
-      "kind": 1,
-      "language": "markdown",
-      "value": "### Cell 2: `ProcessWeather` Action\nWhenever a raw JSON response arrives on `campus/weather/raw`, `ProcessWeather`:\n1. Extracts `current.temperature_2m`, `current.wind_speed_10m`, and `current.weather_code` using `GET JSON ... IN PAYLOAD AS <TYPE>`.\n2. Computes Fahrenheit (`({temp_c} * 1.8) + 32`).\n3. Publishes each value to `campus/weather/reading/<field>` and then runs `PUBLISH MODEL WeatherReading TO \"campus/weather/reading\"` to emit the complete JSON object.\n\nClick **▷** on the cell below to deploy `ProcessWeather`:"
-    },
-    {
-      "kind": 2,
-      "language": "lot",
-      "value": "DEFINE ACTION ProcessWeather\nON TOPIC \"campus/weather/raw\" DO\n    SET \"temp_c\" WITH (GET JSON \"current.temperature_2m\" IN PAYLOAD AS DOUBLE)\n    SET \"wind\" WITH (GET JSON \"current.wind_speed_10m\" IN PAYLOAD AS DOUBLE)\n    SET \"code\" WITH (GET JSON \"current.weather_code\" IN PAYLOAD AS INT)\n    SET \"temp_f\" WITH (({temp_c} * 1.8) + 32)\n    PUBLISH TOPIC \"campus/weather/reading/temperature_c\" WITH {temp_c}\n    PUBLISH TOPIC \"campus/weather/reading/temperature_f\" WITH {temp_f}\n    PUBLISH TOPIC \"campus/weather/reading/wind_kmh\" WITH {wind}\n    PUBLISH TOPIC \"campus/weather/reading/weather_code\" WITH {code}\n    PUBLISH MODEL WeatherReading TO \"campus/weather/reading\"\n"
-    },
-    {
-      "kind": 1,
-      "language": "markdown",
-      "value": "### Test it with a sample payload\n\nBefore connecting the live weather API in Lab 3, test your Model and Action manually:\n1. Open **Data Viewer** from the **bottom Dock** and click **Publish**.\n2. Publish to topic **`campus/weather/raw`** with this JSON payload:\n\n```json\n{\"current\":{\"temperature_2m\":22.5,\"wind_speed_10m\":14.0,\"weather_code\":1}}\n```\n\n3. Click **`campus/weather/reading`** in the Data Viewer topic tree — you should see a JSON object with `temperature_c: 22.5`, `temperature_f: 72.5`, `wind_kmh: 14`, `weather_code: 1`, `station: \"campus-main\"`, and an `observed_at` UTC timestamp.\n\n**Next up:** Open **`03-campus-weather.lotnb`** to fetch live weather from Open-Meteo!"
-    }
-  ]
-}
+[
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "# Lab 2: The WeatherReading Model and Unit Conversion\n\n**Goal:** Turn a raw weather-API response into a clean, structured reading with both metric (°C, km/h) and imperial (°F, mph) units.\n\n**What you will build:**\n1. **`WeatherReading` (Model):** Defines the exact JSON schema of a clean weather reading — five fields with explicit types.\n2. **`ProcessWeather` (Action):** Listens on `campus/weather/raw`, validates that the response contains temperature data, converts °C to °F and km/h to mph, and publishes a `WeatherReading` to `campus/weather/reading`.\n\n> **Important:** Run the cells **in order** (Cell 1 first, then Cell 2), or click **Deploy All** — `ProcessWeather` references `WeatherReading`."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 1. The `WeatherReading` Model\n\nA **Model** (`DEFINE MODEL`) is a data contract. The keyword `COLLAPSED` means the Broker bundles all five fields into a single JSON object on one topic whenever an Action runs `PUBLISH MODEL WeatherReading TO ...`."
+ },
+ {
+  "kind": 2,
+  "language": "lot",
+  "value": "DEFINE MODEL WeatherReading COLLAPSED\n    ADD DOUBLE \"temperature_c\"\n    ADD DOUBLE \"temperature_f\"\n    ADD DOUBLE \"wind_kmh\"\n    ADD DOUBLE \"wind_mph\"\n    ADD STRING \"timestamp\""
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 2. The `ProcessWeather` Action\n\nWhen a raw JSON message arrives on `campus/weather/raw`:\n- If `current.temperature_2m` is missing (for example, if the weather API returned an error object), `ProcessWeather` forwards the raw payload to `campus/weather/errors` and stops.\n- Why check for both `EMPTY` and `\"null\"`? A JSON field that is missing comes back as the string `\"null\"`, whereas an empty payload comes back as `EMPTY`.\n- Otherwise, it extracts `temperature_2m` and `wind_speed_10m`, calculates Fahrenheit and mph, and publishes the structured `WeatherReading` model to `campus/weather/reading`."
+ },
+ {
+  "kind": 2,
+  "language": "lot",
+  "value": "DEFINE ACTION ProcessWeather\nON TOPIC \"campus/weather/raw\" DO\n    SET \"temp_raw\" WITH (GET JSON \"current.temperature_2m\" IN PAYLOAD AS STRING)\n    IF {temp_raw} == EMPTY OR {temp_raw} == \"null\" THEN\n        PUBLISH TOPIC \"campus/weather/errors\" WITH PAYLOAD\n    ELSE\n        SET \"temp_c\" WITH (GET JSON \"current.temperature_2m\" IN PAYLOAD AS DOUBLE)\n        SET \"wind_kmh\" WITH (GET JSON \"current.wind_speed_10m\" IN PAYLOAD AS DOUBLE)\n        SET \"temp_f\" WITH (({temp_c} * 9.0 / 5.0) + 32.0)\n        SET \"wind_mph\" WITH ({wind_kmh} * 0.621371)\n        PUBLISH MODEL WeatherReading TO \"campus/weather/reading\" WITH\n            temperature_c = {temp_c}\n            temperature_f = {temp_f}\n            wind_kmh = {wind_kmh}\n            wind_mph = {wind_mph}\n            timestamp = TIMESTAMP \"UTC\""
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## Check It Worked\n\nThe real weather API isn't connected yet (that's Lab 3), so let's simulate it! Open **Data Viewer → Publish** and send this sample payload to `campus/weather/raw` (with **Retain** off):\n\n```json\n{\"current\": {\"temperature_2m\": 18.4, \"wind_speed_10m\": 12.6}}\n```\n\nIn the topic tree under `campus/weather/reading`, you will see a formatted JSON reading with `\"temperature_c\": 18.4` and `\"temperature_f\": 65.12`.\n\nDocs: [MODEL publishing](https://docs.coreflux.org/latest/lot-language/models/publish-model) · [Operations (GET JSON, EMPTY)](https://docs.coreflux.org/latest/lot-language/actions/operations)."
+ }
+]

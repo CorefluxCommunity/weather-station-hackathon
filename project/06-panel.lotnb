@@ -1,23 +1,17 @@
-{
-  "version": 1,
-  "metadata": {
-    "title": "Lab 6 — CampusWeather Panel"
-  },
-  "cells": [
-    {
-      "kind": 1,
-      "language": "markdown",
-      "value": "# Lab 6 — `CampusWeather` Dashboard Panel\n\nA **Panel** (`DEFINE PANEL`) is a live operator dashboard defined in LoT and rendered inside the HUB's **Dashboards** window. It subscribes directly to your MQTT topics — no frontend code required.\n\n### What this Panel creates\n- A 12-column responsive `GRID` layout.\n- Three **`STAT` cards** across the top row (`SPAN 4` each = 12 columns) showing **Temperature (°C)**, **Temperature (°F)**, and **Wind Speed (km/h)**.\n- One **`BADGE` indicator** on the second row (`SPAN 4`) showing **Heat Alert** (`on` in red vs. `off` in green).\n\n### Deploy and view your dashboard\n1. Click **▷** on the code cell below.\n2. Open **Dashboards** from the **bottom Dock** and click **Campus Weather**.\n3. If any card shows `--`, open **Data Viewer → Publish** and send `poll` to `campus/weather/request` to push a fresh reading."
-    },
-    {
-      "kind": 2,
-      "language": "lot",
-      "value": "DEFINE PANEL CampusWeather\n    WITH TITLE \"Campus Weather\"\n    WITH DESCRIPTION \"Live readings from the campus station\"\n    WITH ICON \"cloud-sun\"\n    WITH DENSITY \"comfortable\"\n    WITH REFRESH 5\n\n    LAYOUT USING GRID WITH COLUMNS 12\n\n        SECTION \"Current Conditions\" WITH ICON \"thermometer\" COLLAPSIBLE FALSE\n\n            WIDGET \"Temperature (°C)\" AS STAT\n                WITH SOURCE TOPIC \"campus/weather/reading/temperature_c\"\n                WITH UNIT \"°C\"\n                WITH DECIMALS 1\n                WITH COLOR \"#f97316\"\n                WITH ICON \"thermometer\"\n                WITH SPAN 4\n\n            WIDGET \"Temperature (°F)\" AS STAT\n                WITH SOURCE TOPIC \"campus/weather/reading/temperature_f\"\n                WITH UNIT \"°F\"\n                WITH DECIMALS 1\n                WITH COLOR \"#fb923c\"\n                WITH ICON \"thermometer\"\n                WITH SPAN 4\n\n            WIDGET \"Wind Speed\" AS STAT\n                WITH SOURCE TOPIC \"campus/weather/reading/wind_kmh\"\n                WITH UNIT \"km/h\"\n                WITH DECIMALS 1\n                WITH COLOR \"#38bdf8\"\n                WITH ICON \"wind\"\n                WITH SPAN 4\n\n        SECTION \"Alerts\" WITH ICON \"bell\" COLLAPSIBLE FALSE\n\n            WIDGET \"Heat Alert\" AS BADGE\n                WITH SOURCE TOPIC \"campus/weather/alerts/heat_active\"\n                WITH ICON \"flame\"\n                WITH SPAN 4\n                WITH MAPPING\n                    WHEN \"on\" LABEL \"HEAT ALERT\" COLOR \"#ef4444\"\n                    WHEN \"off\" LABEL \"Normal\" COLOR \"#22c55e\"\n"
-    },
-    {
-      "kind": 1,
-      "language": "markdown",
-      "value": "**Congratulations!** You have built the entire Campus Weather Station pipeline end to end.\n\nWant to go further? Open **`07-stretch.lotnb`** in the left sidebar for 6 optional stretch challenges!"
-    }
-  ]
-}
+[
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "# Lab 6: The Campus Weather Panel\n\n**Goal:** Build a live dashboard for your weather station inside the Coreflux HUB.\n\n**What you will build:**\n- **`CampusWeather` (Panel):** A 4-column grid dashboard (`DEFINE PANEL`) with four live components:\n  1. **`TempGauge` (`gauge`):** Temperature in °C (`-20` to `45` °C) from `campus/weather/reading`.\n  2. **`TempF` (`value`):** Temperature in °F from `campus/weather/reading`.\n  3. **`Wind` (`value`):** Wind speed in km/h from `campus/weather/reading`.\n  4. **`HeatState` (`text`):** Heat alert state (`on` / `off`) from `campus/weather/alerts/heat_active`.\n\n> **Syntax tip:** Indent every `WITH` line 4 spaces under `DEFINE PANEL`, as shown below. Each component extracts its JSON field from `campus/weather/reading` using `WITH JSON_PATH \"…\"` on its `BIND` line."
+ },
+ {
+  "kind": 2,
+  "language": "lot",
+  "value": "DEFINE PANEL CampusWeather\n    WITH VISIBILITY PUBLIC\n    WITH STATE PUBLISHED\n    WITH TITLE \"Campus Weather\"\n    WITH LAYOUT \"grid\" COLUMNS 4 ROWS 1\n\n    ADD COMPONENT \"TempGauge\" WITH TYPE \"gauge\"\n        AT COLUMN 1 ROW 1\n        SET LABEL \"Temperature\"\n        SET RANGE FROM -20 TO 45\n        SET UNIT \"°C\"\n        BIND VALUE TO TOPIC \"campus/weather/reading\" WITH JSON_PATH \"temperature_c\"\n\n    ADD COMPONENT \"TempF\" WITH TYPE \"value\"\n        AT COLUMN 2 ROW 1\n        SET LABEL \"Fahrenheit\"\n        SET UNIT \"°F\"\n        SET DECIMALS 1\n        BIND VALUE TO TOPIC \"campus/weather/reading\" WITH JSON_PATH \"temperature_f\"\n\n    ADD COMPONENT \"Wind\" WITH TYPE \"value\"\n        AT COLUMN 3 ROW 1\n        SET LABEL \"Wind\"\n        SET UNIT \"km/h\"\n        SET DECIMALS 1\n        BIND VALUE TO TOPIC \"campus/weather/reading\" WITH JSON_PATH \"wind_kmh\"\n\n    ADD COMPONENT \"HeatState\" WITH TYPE \"text\"\n        AT COLUMN 4 ROW 1\n        SET LABEL \"Heat alert\"\n        BIND CONTENT TO TOPIC \"campus/weather/alerts/heat_active\""
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## Check It Worked\n\n1. Open **Dashboards** from the bottom dock — you will see **Campus Weather** in the list. Click it to open your dashboard.\n2. Components show `---` until the next reading arrives. Open **Data Viewer → Publish** and send `poll` to `campus/weather/request`.\n3. Watch all four components populate live with °C, °F, km/h, and `on`/`off`!\n\nDocs: [Defining panels](https://docs.coreflux.org/latest/lot-language/panels/defining-panels) · [Data binding](https://docs.coreflux.org/latest/lot-language/panels/data-binding)."
+ }
+]

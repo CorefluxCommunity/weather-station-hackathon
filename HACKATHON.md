@@ -33,10 +33,10 @@ By the end of the 6 core labs, your broker will run this complete pipeline autom
 
 ```text
 Open-Meteo Web API
-       │  (Lab 3: CampusWeather Connector fetches JSON every 60s)
+       │  (Lab 3: CampusWeather Connector fetches JSON every 5 min or on poll)
        ▼
 campus/weather/raw
-       │  (Lab 2: ProcessWeather Action validates & converts °C→°F)
+       │  (Lab 2: ProcessWeather Action validates & converts °C→°F, km/h→mph)
        ▼
 campus/weather/reading  ──┬──► Lab 4: WeatherHistory Connector ──► exports/campus-weather.csv
                           ├──► Lab 4: HeatAlert Action ──► HeatMail Connector ──► Mailpit Inbox

@@ -1,43 +1,42 @@
-{
-  "version": 1,
-  "metadata": {
-    "title": "Lab 4 — HeatAlert, WeatherHistory & HeatMail"
-  },
-  "cells": [
-    {
-      "kind": 1,
-      "language": "markdown",
-      "value": "# Lab 4 — `HeatAlert`, `WeatherHistory` & `HeatMail`\n\nIn this lab, you will connect three new pieces to `campus/weather/reading`:\n1. **`HeatAlert` (Action):** Compares `temperature_c` against the retained threshold on `config/heat_limit_c` and uses a retained flag (`campus/weather/alerts/heat_active`) so an alert fires **only once** when a heat wave starts — not on every 60-second poll.\n2. **`WeatherHistory` (CSV Connector):** Appends every reading as a new row in `project/exports/campus-weather.csv`.\n3. **`HeatMail` (Email Connector):** Sends an HTML alert email (using `templates/heat-alert.html`) to Mailpit (`http://localhost:8025`) whenever `campus/weather/alerts/heat` fires.\n\n> **Prerequisite check:** Make sure you published `30` with **Retain ON** to `config/heat_limit_c` in `00-setup`.\n\n### Cell 1: Deploy `HeatAlert`\nNotice how `KEEP TOPIC \"campus/weather/alerts/heat_active\" WITH \"on\"` publishes a **retained** message (`KEEP TOPIC` = `PUBLISH TOPIC` with Retain ON), and `GET TOPIC \"...\"` reads that retained state on the next run.\n\nClick **▷** on each of the 3 cells below (or click **Deploy All** at the top right):"
-    },
-    {
-      "kind": 2,
-      "language": "lot",
-      "value": "DEFINE ACTION HeatAlert\nON TOPIC \"campus/weather/reading\" DO\n    SET \"temp_c\" WITH (GET JSON \"temperature_c\" IN PAYLOAD AS DOUBLE)\n    SET \"limit\" WITH (GET TOPIC \"config/heat_limit_c\" AS DOUBLE)\n    SET \"active\" WITH (GET TOPIC \"campus/weather/alerts/heat_active\" AS STRING)\n    IF {temp_c} > {limit} THEN\n        IF {active} != \"on\" THEN\n            KEEP TOPIC \"campus/weather/alerts/heat_active\" WITH \"on\"\n            PUBLISH TOPIC \"campus/weather/alerts/heat\" WITH PAYLOAD\n    ELSE\n        KEEP TOPIC \"campus/weather/alerts/heat_active\" WITH \"off\"\n"
-    },
-    {
-      "kind": 1,
-      "language": "markdown",
-      "value": "### Cell 2: Deploy `WeatherHistory` (CSV Connector)\nEvery JSON message on `campus/weather/reading` is appended as a row to `/data/exports/campus-weather.csv` (mounted on your computer at `project/exports/campus-weather.csv`).\n\n> **Note:** In the HUB's **Connectors** window, `WeatherHistory` may show a red status indicator until its first message arrives — that is normal for file-based Connectors."
-    },
-    {
-      "kind": 2,
-      "language": "lot",
-      "value": "DEFINE CONNECTOR WeatherHistory WITH TYPE CSV\n    ADD CSV_CONFIG\n        WITH FILE_PATH \"/data/exports/campus-weather.csv\"\n        WITH DELIMITER \",\"\n        WITH HAS_HEADER TRUE\n        WITH CREATE_IF_MISSING TRUE\n    ADD EVENT AppendReading\n        WITH SOURCE_TOPIC \"campus/weather/reading\"\n        WITH MODE \"APPEND\"\n"
-    },
-    {
-      "kind": 1,
-      "language": "markdown",
-      "value": "### Cell 3: Deploy `HeatMail` (Email Connector)\nWhen `HeatAlert` publishes a reading to `campus/weather/alerts/heat`, `HeatMail` fills the `{value.json.*}` placeholders inside `/templates/heat-alert.html` and sends the email to Mailpit."
-    },
-    {
-      "kind": 2,
-      "language": "lot",
-      "value": "DEFINE CONNECTOR HeatMail WITH TYPE EMAIL\n    ADD SMTP_CONFIG\n        WITH SERVER (GET ENV \"SMTP_HOST\")\n        WITH PORT 1025\n        WITH USERNAME (GET ENV \"SMTP_USER\")\n        WITH PASSWORD (GET SECRET \"SMTP_PASSWORD\")\n        WITH USE_TLS FALSE\n    ADD EVENT SendHeatEmail\n        WITH SOURCE_TOPIC \"campus/weather/alerts/heat\"\n        WITH TO \"ops@example.com\"\n        WITH SUBJECT \"Campus heat alert\"\n        WITH TEMPLATE_PATH \"/templates/heat-alert.html\"\n        WITH IS_HTML TRUE\n"
-    },
-    {
-      "kind": 1,
-      "language": "markdown",
-      "value": "### Test the alert and email\n\n1. **Normal reading (`limit = 30`):** In **Data Viewer → Publish**, send `poll` to `campus/weather/request`. Check that `campus/weather/alerts/heat_active` is `\"off\"` and a new row appears in `project/exports/campus-weather.csv`.\n2. **Trigger a heat wave (`limit = 1`):**\n   - Publish `1` with **Retain ON** to `config/heat_limit_c`.\n   - Publish `poll` to `campus/weather/request`.\n   - `campus/weather/alerts/heat_active` flips to `\"on\"` and `campus/weather/alerts/heat` receives the reading.\n   - Open **Mailpit** at [http://localhost:8025](http://localhost:8025) — you should see one **Campus heat alert** email!\n3. **Test deduplication:** Publish `poll` to `campus/weather/request` a second time. Because `heat_active` is already `\"on\"`, **no second email** is sent.\n4. **Reset:** Publish `30` with **Retain ON** to `config/heat_limit_c`, then publish `poll` to `campus/weather/request` (`heat_active` returns to `\"off\"`).\n\n**Next up:** Open **`05-rules.lotnb`** to lock down `config/#` so only `root` can change the threshold."
-    }
-  ]
-}
+[
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "# Lab 4: Heat Alert, CSV History, and Email\n\n**Goal:** React to every weather reading by evaluating a live heat threshold, archiving readings to a CSV file, and emailing the operations team when a heat episode begins.\n\n**What you will build:**\n1. **`HeatAlert` (Action):** Compares each reading's `temperature_c` against the retained limit on `config/heat_limit_c` (which you set to `30` in `00-setup`).\n2. **`WeatherHistory` (Connector):** Appends every reading as a new row in `project/exports/campus-weather.csv`.\n3. **`HeatMail` (Connector):** Sends a formatted HTML alert email to Mailpit (`http://localhost:8025`) once per heat episode."
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 1. The `HeatAlert` Action\n\n- **`campus/weather/alerts/heat_active`** receives `\"on\"` or `\"off\"` on every reading. We use `\"on\"`/`\"off\"` instead of `\"true\"`/`\"false\"` intentionally: LoT can treat the string `\"false\"` as a boolean.\n- **`campus/weather/alerts/heat`** receives the reading **only on the transition from `off` to `on`** (`IF {was} != \"on\"`). That way, the team gets **one email when a heat wave starts**, not a duplicate email every 5 minutes!\n- If `config/heat_limit_c` is empty, the alert safely stays `\"off\"`."
+ },
+ {
+  "kind": 2,
+  "language": "lot",
+  "value": "DEFINE ACTION HeatAlert\nON TOPIC \"campus/weather/reading\" DO\n    SET \"temp_c\" WITH (GET JSON \"temperature_c\" IN PAYLOAD AS DOUBLE)\n    SET \"limit_raw\" WITH GET TOPIC \"config/heat_limit_c\"\n    SET \"was\" WITH GET TOPIC \"campus/weather/alerts/heat_active\"\n    IF {limit_raw} == EMPTY THEN\n        PUBLISH TOPIC \"campus/weather/alerts/heat_active\" WITH \"off\"\n    ELSE\n        SET \"heat_limit\" WITH (GET TOPIC \"config/heat_limit_c\" AS DOUBLE)\n        IF {temp_c} > {heat_limit} THEN\n            IF {was} != \"on\" THEN\n                PUBLISH TOPIC \"campus/weather/alerts/heat\" WITH PAYLOAD\n            PUBLISH TOPIC \"campus/weather/alerts/heat_active\" WITH \"on\"\n        ELSE\n            PUBLISH TOPIC \"campus/weather/alerts/heat_active\" WITH \"off\""
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 2. The `WeatherHistory` Connector (CSV File)\n\nAppends every reading on `campus/weather/reading` as a row in `campus-weather.csv` (creating the header row automatically on the first write). Because `docker-compose.yml` mounts `./exports` to `/data/exports` inside the Broker container, the file appears directly in `project/exports/campus-weather.csv` on your laptop.\n\n- **Good to know:** In the HUB's **Connectors** window, `FILE_STORAGE` connectors currently display a red/disconnected status dot even when working normally — check `project/exports/campus-weather.csv` to verify.\n- The `timestamp` column is written with extra quotes (`\"\"\"2026-10-20 08:15:00\"\"\"`, in UTC); spreadsheet apps still read it as text."
+ },
+ {
+  "kind": 2,
+  "language": "lot",
+  "value": "DEFINE CONNECTOR WeatherHistory WITH TYPE FILE_STORAGE\n    ADD FILE_STORAGE_CONFIG\n        WITH STORAGE_DIR \"/data/exports\"\n        WITH FORMAT \"CSV\"\n        WITH FILE_PATTERN \"campus-weather.csv\"\n        WITH APPEND \"true\"\n    ADD EVENT SaveReading\n        WITH SOURCE_TOPIC \"campus/weather/reading\"\n        WITH QUERY \"CLEAN:{table: campus_weather, data: {value.json}}\""
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## 3. The `HeatMail` Connector (Email)\n\nWhenever `HeatAlert` publishes to `campus/weather/alerts/heat`, `HeatMail` renders `/templates/heat-alert.html` with the reading's JSON fields and sends the email via **Mailpit** (`SMTP_HOST=mailpit`, port `1025`, no TLS). Mailpit catches all outgoing mail locally at **http://localhost:8025** — nothing leaves your laptop."
+ },
+ {
+  "kind": 2,
+  "language": "lot",
+  "value": "DEFINE CONNECTOR HeatMail WITH TYPE EMAIL\n    ADD SMTP_CONFIG\n        WITH HOST GET ENV \"SMTP_HOST\"\n        WITH PORT 1025\n        WITH USERNAME GET ENV \"SMTP_USER\"\n        WITH PASSWORD GET SECRET \"SMTP_PASSWORD\"\n        WITH USE_TLS false\n    ADD EVENT SendHeatAlert\n        WITH SOURCE_TOPIC \"campus/weather/alerts/heat\"\n        WITH RECIPIENT \"ops@example.com\"\n        WITH SUBJECT \"Campus heat alert\"\n        WITH TEMPLATE_PATH \"/templates/heat-alert.html\""
+ },
+ {
+  "kind": 1,
+  "language": "markdown",
+  "value": "## Check It Worked\n\n1. In **Data Viewer → Publish**, lower the threshold by publishing `1` to `config/heat_limit_c` with **Retain** switched **ON**.\n2. Trigger a reading by publishing `poll` to `campus/weather/request`.\n3. In **Data Viewer**, confirm `campus/weather/alerts/heat_active` is now `on` and a message arrived on `campus/weather/alerts/heat`.\n4. Open **http://localhost:8025** (Mailpit): you will see one *Campus heat alert* email! Publish `poll` again — no second email is sent because `heat_active` was already `on`.\n5. Check `project/exports/campus-weather.csv` on your laptop — it has a row for each reading.\n6. **Reset the threshold:** Publish `30` (with **Retain** ON) to `config/heat_limit_c`, then publish `poll` so `heat_active` returns to `off`.\n\nDocs: [File storage](https://docs.coreflux.org/latest/lot-language/routes/data-storage/file-storage) · [Email](https://docs.coreflux.org/latest/lot-language/routes/notifications/email)."
+ }
+]
