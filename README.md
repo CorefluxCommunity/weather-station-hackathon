@@ -7,7 +7,7 @@ weather API for your site, converts the units, raises a heat alert, keeps a CSV 
 the team once per heat episode and shows a live dashboard in the Coreflux HUB.
 
 - **Start here:** [HACKATHON.md](HACKATHON.md): the labs, step by step, with screenshots.
-- **Platform overview:** open [index.html](index.html) in a browser (the slides). Walkthrough in [HACKATHON.md](HACKATHON.md#platform-overview).
+- **Platform overview:** after cloning the lesson into the HUB, click `index.html` in the LoT Editor. Walkthrough in [HACKATHON.md](HACKATHON.md#platform-overview).
 - **Setup and reference:** [project/README.md](project/README.md).
 - **Notebooks and Docker setup:** [project/](project/).
 
@@ -58,8 +58,9 @@ If a check fails:
 1. `git clone https://github.com/CorefluxCommunity/weather-station-hackathon.git`, or **Code →
    Download ZIP** on this page.
 2. `cd weather-station-hackathon/project` and `docker compose up -d`, then open http://localhost:3000.
-3. In the HUB, open **LoT Editor**, right-click *Untitled* → **Import .lotnb** and import the
-   notebooks from `project/`. In VS Code, use **Git: Clone** and the **LoT Notebooks** extension.
+3. In the HUB, open **LoT Editor → New → From git…** and clone this repository. Click `index.html`
+   in the tree to open the platform overview. In VS Code, use **Git: Clone** and the **LoT Notebooks**
+   extension.
 
 Details in [HACKATHON.md](HACKATHON.md#get-the-lesson).
 

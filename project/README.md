@@ -11,8 +11,9 @@ Install Docker and Docker Compose before section 1. The steps are in
 [Prerequisites](../HACKATHON.md#prerequisites) (`docker` and `docker compose version` should both
 print a version).
 
-Before the labs, open the platform overview in a browser: [`../index.html`](../index.html). The
-slide list is in [Platform overview](../HACKATHON.md#platform-overview).
+Before the labs, clone the lesson into the HUB and click `index.html` in the LoT Editor. The slides
+open there. The slide list is in [Platform overview](../HACKATHON.md#platform-overview). A local
+copy can also be opened as [`../index.html`](../index.html) in a browser.
 
 ## 0. Get the lesson
 
@@ -26,18 +27,20 @@ template and the `exports/` folder.
 2. **Start it:** `cd weather-station-hackathon/project` (`weather-station-hackathon-main/project`
    for the ZIP) and `docker compose up -d`.
 3. **Open the notebooks**, one of:
-   - **HUB** (http://localhost:3000): the LoT Editor has no clone-from-git command, so import the
-     files from your copy. Open **LoT Editor** from the dock, right-click the project (*Untitled*) →
-     **Import .lotnb**, and pick the notebooks in `project/` one at a time (or drag them onto the
-     tree). Open `01-heartbeat` and click ▷ on its cell (Run Cell), or **Deploy All**. Do not use
-     **Push project to broker**: every lab is deployed cell by cell.
+   - **HUB** (http://localhost:3000): open **LoT Editor** from the dock, then **New → From git…**,
+     paste `https://github.com/CorefluxCommunity/weather-station-hackathon.git` and click **Clone**.
+     The whole repository lands in the tree, including `index.html`. Click `index.html` to open the
+     platform overview in the editor. Open `project/01-heartbeat` and click ▷ on its cell
+     (Run Cell), or **Deploy All**. Do not use **Push project to broker**: every lab is deployed
+     cell by cell. If you downloaded a ZIP instead, right-click the project (*Untitled*) →
+     **Import .lotnb** and pick the notebooks in `project/` one at a time (or drag them onto the tree).
    - **VS Code:** Command Palette → **Git: Clone**, paste `https://github.com/CorefluxCommunity/weather-station-hackathon.git`, pick a folder and click
      **Open**. Install the **LoT Notebooks** extension
      ([guide](https://docs.coreflux.org/latest/quick-start/vscode)), connect it to `localhost:1883`
      as `root` / `coreflux`, open `project/01-heartbeat.lotnb` and run its cell.
 
 ![Project menu in the LoT Editor](../docs/screenshots/37-hub-project-menu-no-clone.png)
-*Right-click *Untitled*: **Import .lotnb** (there is no clone-from-git command).*
+*Right-click *Untitled*: **Import .lotnb**, for a ZIP copy. A git clone uses **New → From git…**.*
 
 ![Notebooks imported from the downloaded copy](../docs/screenshots/38-cloned-notebooks-imported.png)
 *The eight notebooks from `project/`, imported. `notebook.lotnb` is the project's empty default.*
