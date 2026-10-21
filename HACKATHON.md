@@ -1,6 +1,6 @@
 # Hackathon Guide: Build a Live Weather Station with LoT
 
-Welcome to the Coreflux Weather Station Hackathon! In about **2 hours**, you will build an end-to-end IoT data pipeline and live dashboard that runs entirely inside a single **Coreflux Broker**.
+Welcome to the Coreflux Weather Station Hackathon! You will build an end-to-end IoT data pipeline and live dashboard that runs entirely inside a single **Coreflux Broker**.
 
 You do not need any prior experience with Coreflux, MQTT, or LoT (Language of Things) — this guide explains each concept as you build it.
 
@@ -9,17 +9,18 @@ You do not need any prior experience with Coreflux, MQTT, or LoT (Language of Th
 ## Table of contents
 
 1. [What you will build](#1-what-you-will-build)
-2. [Key concepts in 60 seconds](#2-key-concepts-in-60-seconds)
+2. [Key concepts](#2-key-concepts)
+   - [Learn about Coreflux concepts (`index.html`)](#learn-about-coreflux-concepts-indexhtml)
 3. [Step 1: Start the local environment](#3-step-1-start-the-local-environment)
-4. [Step 2: Connect to the HUB and take the visual tour](#4-step-2-connect-to-the-hub-and-take-the-visual-tour)
+4. [Step 2: Connect to the HUB](#4-step-2-connect-to-the-hub)
 5. [Step 3: Configure variables and the heat limit (`00-setup`)](#5-step-3-configure-variables-and-the-heat-limit-00-setup)
 6. [Step 4: Build the station (Labs 1–6)](#6-step-4-build-the-station-labs-16)
-   - [Lab 1: Heartbeat (`01-heartbeat`)](#lab-1-heartbeat-10-min)
-   - [Lab 2: Model and unit conversion (`02-model-processweather`)](#lab-2-model-and-unit-conversion-25-min)
-   - [Lab 3: Fetch real weather (`03-campus-weather`)](#lab-3-fetch-real-weather-25-min)
-   - [Lab 4: Heat alert, CSV history, and email (`04-heat-alert-history-email`)](#lab-4-heat-alert-csv-history-and-email-25-min)
-   - [Lab 5: Protect the heat limit with a Rule (`05-rules`)](#lab-5-protect-the-heat-limit-with-a-rule-15-min)
-   - [Lab 6: Build the live dashboard (`06-panel`)](#lab-6-build-the-live-dashboard-20-min)
+   - [Lab 1: Heartbeat (`01-heartbeat`)](#lab-1-heartbeat)
+   - [Lab 2: Model and unit conversion (`02-model-processweather`)](#lab-2-model-and-unit-conversion)
+   - [Lab 3: Fetch real weather (`03-campus-weather`)](#lab-3-fetch-real-weather)
+   - [Lab 4: Heat alert, CSV history, and email (`04-heat-alert-history-email`)](#lab-4-heat-alert-csv-history-and-email)
+   - [Lab 5: Protect the heat limit with a Rule (`05-rules`)](#lab-5-protect-the-heat-limit-with-a-rule)
+   - [Lab 6: Build the live dashboard (`06-panel`)](#lab-6-build-the-live-dashboard)
 7. [Stretch goals (`07-stretch`)](#7-stretch-goals-07-stretch)
 8. [Troubleshooting & FAQ](#8-troubleshooting--faq)
 9. [Optional: Using VS Code instead of the HUB](#9-optional-using-vs-code-instead-of-the-hub)
@@ -45,15 +46,20 @@ campus/weather/reading  ──┬──► Lab 4: WeatherHistory Connector ─�
 
 ### How you will know everything works ("Done" checklist)
 
-- `campus/weather/heartbeat` publishes `ok` every 5 seconds.
-- Publishing `poll` to `campus/weather/request` fetches live weather and produces a structured JSON reading on `campus/weather/reading`.
-- `project/exports/campus-weather.csv` gains a new row on every reading.
-- Lowering `config/heat_limit_c` (protected by a Rule in Lab 5) below the current temperature switches `campus/weather/alerts/heat_active` to `on`, publishes an alert on `campus/weather/alerts/heat`, and sends one email to Mailpit (`http://localhost:8025`).
-- The **Campus Weather** dashboard in the HUB displays live °C, °F, wind speed, and heat alert status.
+When you finish the labs, you can check all of this yourself in the HUB:
+
+- **Data Viewer** shows the station's heartbeat, `ok`, refreshed every 5 seconds.
+- When you ask the station for the weather, a new reading with the real weather for your site appears in **Data Viewer**.
+- Every reading adds a line to `project/exports/campus-weather.csv` on your laptop.
+- When you set the heat limit below the current temperature, the heat alert turns on and one email arrives in Mailpit (http://localhost:8025).
+- The **Campus Weather** dashboard (**Dashboards** in the dock) shows the temperature in °C and °F, the wind and whether the heat alert is on.
+
+![The finished station in the HUB](docs/screenshots/done-hub.png)
+*The finished station in the HUB: the Campus Weather dashboard with live °C, °F, wind and the heat alert.*
 
 ---
 
-## 2. Key concepts in 60 seconds
+## 2. Key concepts
 
 Coreflux is an **MQTT broker** with a built-in programming language called **LoT (Language of Things)**. Instead of running separate servers or scripts to poll APIs, transform data, and send alerts, you deploy small building blocks directly into the broker.
 
@@ -69,41 +75,42 @@ Coreflux is an **MQTT broker** with a built-in programming language called **LoT
 | **Rule** (`DEFINE RULE`) | An access-control policy that decides which users or groups may publish or subscribe to specific topics. | A security guard on a topic. |
 | **Panel** (`DEFINE PANEL`) | A live visual dashboard inside the HUB with gauges, value cards, and status indicators bound to topics. | The display screen on the front of the box. |
 
+### Learn about Coreflux concepts (`index.html`)
+
+Optional, and you can come back to it at any time. [`index.html`](index.html) is an interactive, 11-slide visual overview of how all the pieces of the weather station fit together.
+
+**To open it:** once you have downloaded this repository ([Step 1.2](#12-download-this-repository)), open `index.html` from your local copy in any browser. Use the **Next** / **Back** buttons or your left/right arrow keys, and **Full screen** at the top right for a larger view.
+
+![The platform overview, slide 1](docs/screenshots/44-index-concepts.png)
+*The platform overview (`index.html`), slide 1: the finished weather station.*
+
+| Slide | Concept | How it is used in your weather station |
+|---|---|---|
+| **1. The finished weather station** | End result | A live dashboard fed by a single Coreflux Broker |
+| **2. What Coreflux brings** | Get → Centralize → Process → Send | How a reading travels from the web API to the dashboard, CSV file, and email |
+| **3. The Broker** | Broker | The baseplate everything runs on |
+| **4. Topics** | Topics & Unified Namespace | Message addresses like `campus/weather/reading` |
+| **5. Actions** | `DEFINE ACTION` | Event-driven or timed logic ("When X happens, do Y") |
+| **6. Connectors** | `DEFINE CONNECTOR` | Bridges to Open-Meteo (REST), CSV (`FILE_STORAGE`), and Mailpit (`EMAIL`) |
+| **7. Models** | `DEFINE MODEL` | The 5-field blueprint for `WeatherReading` |
+| **8. Rules** | `DEFINE RULE` | Access control so only `operators` can change `config/heat_limit_c` |
+| **9. Panels** | `DEFINE PANEL` | The live Campus Weather dashboard |
+| **10. Put together** | Recap | All 7 pieces in the order you will deploy them |
+| **11. One Thing** | `DEFINE THING` | Optional stretch goal (`07-stretch`) that bundles a station into a reusable template |
+
 ---
 
 ## 3. Step 1: Start the local environment
 
 Everything runs on your laptop inside Docker containers — you do not need to install the Coreflux Broker or HUB manually.
 
-### 1.1 Check that Docker is running ([PREREQUISITES.md](PREREQUISITES.md))
+### 1.1 Install Docker and check it works
 
-Open a terminal and run:
-
-```bash
-docker --version
-docker compose version
-```
-
-Both commands must print a version (`Docker Compose version v2…`).
-
-<details>
-<summary><strong>Don't have Docker installed, or getting an error? Click here</strong></summary>
-
-| System | How to install |
-|---|---|
-| **Windows** | Install [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/) (includes Docker Compose). Start Docker Desktop and wait until it says it is running. |
-| **macOS** | Install [Docker Desktop for Mac](https://docs.docker.com/desktop/setup/install/mac-install/) (includes Docker Compose). Start Docker Desktop and wait until it says it is running. |
-| **Linux** | Install [Docker Engine](https://docs.docker.com/engine/install/) and the [Docker Compose plugin](https://docs.docker.com/compose/install/linux/). |
-
-- **`docker: command not found`** — Docker is not installed, or your terminal was opened before installation finished. Install Docker, then open a new terminal.
-- **`Cannot connect to the Docker daemon`** — Start Docker Desktop (Windows/macOS) or the Docker service (Linux), then try again.
-- **`docker compose` is not a command, but `docker-compose` is** — That is Compose v1. Update Docker Desktop or install the Compose v2 plugin so `docker compose` (with a space) works.
-
-</details>
+Install Docker and Docker Compose, and confirm both version checks pass. The steps are in [PREREQUISITES.md](PREREQUISITES.md). Come back here when both checks print a version.
 
 ### 1.2 Download this repository
 
-Get a copy of this repository on your computer (choose one):
+Open a terminal (Terminal on macOS and Linux, PowerShell on Windows) and get a copy of this repository on your computer (choose one):
 
 - **With Git:**
   ```bash
@@ -136,7 +143,7 @@ docker compose wait load-project
 
 ---
 
-## 4. Step 2: Connect to the HUB and take the visual tour
+## 4. Step 2: Connect to the HUB
 
 ### 2.1 Connect to the broker
 
@@ -146,7 +153,7 @@ docker compose wait load-project
 
 ### 2.2 Find your way around the HUB
 
-Take 10 seconds to spot two areas on the screen:
+Spot two areas on the screen:
 
 - **The Dock (bottom center):** Icons that open the main tools — **Data Viewer**, **Connectors**, **LoT Editor**, and **Dashboards** (hover over any icon to see its name).
 - **The Top-Right Bar:**
@@ -173,28 +180,7 @@ Take 10 seconds to spot two areas on the screen:
 
 </details>
 
-### 2.3 Open the visual platform overview (`index.html`)
-
-Before writing code, step through the interactive visual overview to see how all the pieces fit together:
-
-1. Click **LoT Editor** in the bottom dock.
-2. In the left sidebar, you will see the **`weather-station`** project tree containing `index.html` and the `project/` folder.
-3. Click **`index.html`**. An 11-slide interactive presentation opens right inside the editor (use the **Next** / **Back** buttons or your left/right arrow keys; click **Full screen** at the top right if you want a larger view).
-   *(Tip: You can also open the local [`index.html`](index.html) file directly in any browser tab.)*
-
-| Slide | Concept | How it is used in your weather station |
-|---|---|---|
-| **1. The finished weather station** | End result | A live dashboard fed by a single Coreflux Broker |
-| **2. What Coreflux brings** | Get → Centralize → Process → Send | How a reading travels from the web API to the dashboard, CSV file, and email |
-| **3. The Broker** | Broker | The baseplate everything runs on |
-| **4. Topics** | Topics & Unified Namespace | Message addresses like `campus/weather/reading` |
-| **5. Actions** | `DEFINE ACTION` | Event-driven or timed logic ("When X happens, do Y") |
-| **6. Connectors** | `DEFINE CONNECTOR` | Bridges to Open-Meteo (REST), CSV (`FILE_STORAGE`), and Mailpit (`EMAIL`) |
-| **7. Models** | `DEFINE MODEL` | The 5-field blueprint for `WeatherReading` |
-| **8. Rules** | `DEFINE RULE` | Access control so only `operators` can change `config/heat_limit_c` |
-| **9. Panels** | `DEFINE PANEL` | The live Campus Weather dashboard |
-| **10. Put together** | Recap | All 7 pieces in the order you will deploy them |
-| **11. One Thing** | `DEFINE THING` | Optional stretch goal (`07-stretch`) that bundles a station into a reusable template |
+*Want to see how all the pieces fit together before you write code? See [Learn about Coreflux concepts](#learn-about-coreflux-concepts-indexhtml).*
 
 ---
 
@@ -269,18 +255,18 @@ Open **LoT Editor** from the bottom dock. Under `weather-station` → `project/`
 - **If you edit a cell:** Just click **▷** again — the broker updates the Action, Model, Connector, Rule, or Panel in place.
 - **Important:** Do **not** use *Push project to broker* in the project menu; run cells with **▷** or **Deploy All** as you progress through each lab.
 
-| Lab | Est. Time | Notebook | What you deploy |
-|---|---|---|---|
-| **Lab 1** | 10 min | `01-heartbeat` | `Heartbeat` Action (timer trigger every 5s) |
-| **Lab 2** | 25 min | `02-model-processweather` | `WeatherReading` Model + `ProcessWeather` Action (JSON parsing & unit math) |
-| **Lab 3** | 25 min | `03-campus-weather` | `CampusWeather` REST Connector + `RequestWeather` Action |
-| **Lab 4** | 25 min | `04-heat-alert-history-email` | `HeatAlert` Action + `WeatherHistory` CSV Connector + `HeatMail` Email Connector |
-| **Lab 5** | 15 min | `05-rules` | `ProtectWeatherConfig` Rule (requires event licence; read-along on Community) |
-| **Lab 6** | 20 min | `06-panel` | `CampusWeather` live Dashboard Panel |
+| Lab | Notebook | What you deploy |
+|---|---|---|
+| **Lab 1** | `01-heartbeat` | `Heartbeat` Action (timer trigger every 5s) |
+| **Lab 2** | `02-model-processweather` | `WeatherReading` Model + `ProcessWeather` Action (JSON parsing & unit math) |
+| **Lab 3** | `03-campus-weather` | `CampusWeather` REST Connector + `RequestWeather` Action |
+| **Lab 4** | `04-heat-alert-history-email` | `HeatAlert` Action + `WeatherHistory` CSV Connector + `HeatMail` Email Connector |
+| **Lab 5** | `05-rules` | `ProtectWeatherConfig` Rule (requires event licence; read-along on Community) |
+| **Lab 6** | `06-panel` | `CampusWeather` live Dashboard Panel |
 
 ---
 
-### Lab 1: Heartbeat (10 min)
+### Lab 1: Heartbeat
 
 **Notebook:** `project/01-heartbeat`  
 **Goal:** Deploy your first LoT Action and see live messages arriving in the Data Viewer.
@@ -310,7 +296,7 @@ A simple `Heartbeat` Action that runs on a 5-second timer (`ON EVERY 5 SECONDS D
 
 ---
 
-### Lab 2: Model and unit conversion (25 min)
+### Lab 2: Model and unit conversion
 
 **Notebook:** `project/02-model-processweather`  
 **Goal:** Define a clean data structure (`WeatherReading`) and write an Action (`ProcessWeather`) that converts raw weather JSON into °C, °F, km/h, and mph.
@@ -348,7 +334,7 @@ A simple `Heartbeat` Action that runs on a 5-second timer (`ON EVERY 5 SECONDS D
 
 ---
 
-### Lab 3: Fetch real weather (25 min)
+### Lab 3: Fetch real weather
 
 **Notebook:** `project/03-campus-weather`  
 **Goal:** Connect your broker to the live [Open-Meteo](https://open-meteo.com) REST API and schedule automatic polling every 5 minutes.
@@ -384,7 +370,7 @@ A simple `Heartbeat` Action that runs on a 5-second timer (`ON EVERY 5 SECONDS D
 
 ---
 
-### Lab 4: Heat alert, CSV history, and email (25 min)
+### Lab 4: Heat alert, CSV history, and email
 
 **Notebook:** `project/04-heat-alert-history-email`  
 **Goal:** React to every weather reading: raise an alert when it gets too hot, log every reading to a CSV file, and send one email notification per heat wave.
@@ -435,7 +421,7 @@ A simple `Heartbeat` Action that runs on a 5-second timer (`ON EVERY 5 SECONDS D
 
 ---
 
-### Lab 5: Protect the heat limit with a Rule (15 min)
+### Lab 5: Protect the heat limit with a Rule
 
 **Notebook:** `project/05-rules`  
 **Goal:** Lock down `config/#` so only users in the `operators` group (and `root`) can change the heat threshold.
@@ -512,7 +498,7 @@ A simple `Heartbeat` Action that runs on a 5-second timer (`ON EVERY 5 SECONDS D
 
 ---
 
-### Lab 6: Build the live dashboard (20 min)
+### Lab 6: Build the live dashboard
 
 **Notebook:** `project/06-panel`  
 **Goal:** Deploy a live operator dashboard (`CampusWeather`) in the HUB using LoT.
