@@ -56,11 +56,11 @@ If a check fails:
 ## Get the lesson
 
 1. `git clone https://github.com/CorefluxCommunity/weather-station-hackathon.git`, or **Code →
-   Download ZIP** on this page.
+   Download ZIP** on this page. This local copy is what starts Docker.
 2. `cd weather-station-hackathon/project` and `docker compose up -d`, then open http://localhost:3000.
-3. In the HUB, open **LoT Editor → New → From git…** and clone this repository. Click `index.html`
-   in the tree to open the platform overview. In VS Code, use **Git: Clone** and the **LoT Notebooks**
-   extension.
+3. In the HUB, **LoT Editor → New → From git…** clones this repository from GitHub. The notebooks
+   and `index.html` appear in the tree. Click `index.html` for the platform overview. In VS Code,
+   use **Git: Clone** and the **LoT Notebooks** extension.
 
 Details in [HACKATHON.md](HACKATHON.md#get-the-lesson).
 

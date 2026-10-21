@@ -81,26 +81,24 @@ The lesson is on GitHub: https://github.com/CorefluxCommunity/weather-station-ha
 notebooks (`00-setup` … `07-stretch`), `docker-compose.yml` (Broker, HUB and Mailpit), the email
 template and the `exports/` folder.
 
-1. **Download it**, one of:
+1. **Get a local copy, so you can start Docker**, one of:
    - `git clone https://github.com/CorefluxCommunity/weather-station-hackathon.git`
    - on the GitHub page, **Code → Download ZIP**, then unzip it.
 2. **Start it:** `cd weather-station-hackathon/project` (`weather-station-hackathon-main/project`
    for the ZIP) and `docker compose up -d`.
-3. **Open the notebooks**, one of:
-   - **HUB** (http://localhost:3000): open **LoT Editor** from the dock, then **New → From git…**,
-     paste `https://github.com/CorefluxCommunity/weather-station-hackathon.git` and click **Clone**.
-     The whole repository lands in the tree, including `index.html`. Click `index.html` to open the
-     platform overview in the editor (see below). Open `project/01-heartbeat` and click ▷ on its cell
-     (Run Cell), or **Deploy All**. Do not use **Push project to broker**: every lab is deployed
-     cell by cell. If you downloaded a ZIP instead, right-click the project (*Untitled*) →
-     **Import .lotnb** and pick the notebooks in `project/` one at a time (or drag them onto the tree).
-   - **VS Code:** Command Palette → **Git: Clone**, paste `https://github.com/CorefluxCommunity/weather-station-hackathon.git`, pick a folder and click
-     **Open**. Install the **LoT Notebooks** extension
-     ([guide](https://docs.coreflux.org/latest/quick-start/vscode)), connect it to `localhost:1883`
-     as `root` / `coreflux`, open `project/01-heartbeat.lotnb` and run its cell.
+3. **Open it in the HUB.** The HUB clones straight from GitHub. You do not import the notebooks.
+   Open http://localhost:3000, click **Connect**, then **LoT Editor** from the dock. **New → From git…**,
+   paste `https://github.com/CorefluxCommunity/weather-station-hackathon.git` and click **Clone**.
+   The repository lands in the tree, notebooks and `index.html` included. Click `index.html` for the
+   platform overview (see below). Open `project/01-heartbeat` and click ▷ on its cell (Run Cell), or
+   **Deploy All**. Do not use **Push project to broker**: every lab is deployed cell by cell.
+   **VS Code** is the other editor: Command Palette → **Git: Clone**, paste the same URL, pick a
+   folder and click **Open**. Install the **LoT Notebooks** extension
+   ([guide](https://docs.coreflux.org/latest/quick-start/vscode)), connect it to `localhost:1883`
+   as `root` / `coreflux`, and open `project/01-heartbeat.lotnb`.
 
 ![Project menu in the LoT Editor](docs/screenshots/37-hub-project-menu-no-clone.png)
-*Right-click *Untitled*: **Import .lotnb**, for a ZIP copy. A git clone uses **New → From git…**.*
+*Import is only for a copy that was not cloned. In the HUB, **New → From git…** clones the GitHub repository.*
 
 ![Notebooks imported from the downloaded copy](docs/screenshots/38-cloned-notebooks-imported.png)
 *The eight notebooks from `project/`, imported. `notebook.lotnb` is the project's empty default.*
@@ -143,7 +141,7 @@ then follow `project/README.md` sections 1 to 3:
 
 1. `docker compose up -d` in the `project` folder, open http://localhost:3000 and click **Connect**
    (the form is already filled in: `root` / `coreflux`).
-2. Import the notebooks (next section) and follow `00-setup`: four variables and a secret in **Command Console**
+2. The GitHub clone already has the notebooks. Follow `00-setup`: four variables and a secret in **Command Console**
    (click `root` at the top right), then publish `30`, retained, to `config/heat_limit_c`.
 
 **Finding your way in the HUB:** the dock at the bottom opens **Data Viewer**, **Connectors**,
@@ -157,9 +155,8 @@ covers every other lab; then Lab 5 is a read-along.
 
 ## The labs
 
-Open **LoT Editor** from the dock. Right-click the project (*Untitled*) → **Import .lotnb** and import
-the eight notebooks from `project/`, one at a time (or drag them onto the tree). There is one
-notebook per lab. Each starts with what you will build, has its cells in run order (one piece per
+Open **LoT Editor** from the dock. After **New → From git…**, the eight notebooks are already in
+the tree under `project/`. There is one notebook per lab. Each starts with what you will build, has its cells in run order (one piece per
 cell) and ends with *Check it worked*. Run a notebook with **Deploy All** (top right), or one cell with
 ▷ at its top left. Check each lab in **Data Viewer**, where you can also **Publish**.
 
@@ -207,7 +204,7 @@ Screenshots of every step, taken on a fresh laptop setup. Labs 1 to 4 and 6 show
 *Click `root` for Command Console, Broker Settings and Log out.*
 
 ![Import .lotnb](docs/screenshots/04-import-notebook.png)
-*4. LoT Editor (dock): right-click **Untitled** → **Import .lotnb**, once per notebook.*
+*4. A GitHub clone (**New → From git…**) already puts the notebooks in the tree. Import is only if you did not clone.*
 
 ![Notebooks imported](docs/screenshots/05-notebooks-imported.png)
 *5. The eight notebooks in the project tree.*
