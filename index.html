@@ -359,7 +359,7 @@ ON TOPIC "campus/weather/reading" DO
             <li><b>Email</b>: the mailbox, the team hears about a heat alert</li>
           </ul>
         </div>
-        <div class="code"><span class="code-label">LoT · Broker GA_BROKER_TAG</span><pre><code class="lot">DEFINE CONNECTOR CampusWeather WITH TYPE REST_API
+        <div class="code"><span class="code-label">LoT · Broker 2.22.0</span><pre><code class="lot">DEFINE CONNECTOR CampusWeather WITH TYPE REST_API
     ADD REST_API_CONFIG
         WITH BASE_ADDRESS "https://api.open-meteo.com"
         WITH ENABLE_CLIENT "true"
@@ -465,7 +465,7 @@ PUBLISH MODEL WeatherReading TO "campus/weather/reading" WITH
         <p class="kicker"><span class="chip"><i style="background:#7b2ff7"></i>DEFINE THING</span>The recipe</p>
         <h2>The whole station is one Thing</h2>
         <p class="lead">The antenna, the RequestWeather, ProcessWeather and HeatAlert bricks and the five Model bricks come off the plate together. In LoT that assembled build is a <b>Thing</b>: the recipe is written once as a template, and each site is one line that fills in the blanks.</p>
-        <div class="code"><span class="code-label">LoT · Broker GA_BROKER_TAG</span><pre><code class="lot">DEFINE THING TEMPLATE WeatherStation
+        <div class="code"><span class="code-label">LoT · Broker 2.22.0</span><pre><code class="lot">DEFINE THING TEMPLATE WeatherStation
     WITH PARAM lat
     WITH PARAM lon
     WITH CONNECTOR Weather WITH TYPE REST_API

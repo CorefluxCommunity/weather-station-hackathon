@@ -4,9 +4,54 @@ You will build a weather station that runs entirely inside one Coreflux Broker. 
 weather API for your site, converts the units, raises a heat alert, keeps a CSV history,
 emails the team once per heat episode and shows a live dashboard.
 
-**Time:** about 3 hours for the core labs, plus stretch goals.
-**Software:** Coreflux Broker and HUB, both started by `project/docker-compose.yml`. Everything runs on
-your laptop with Docker.
+**Time:** about 2 hours for the core labs, plus stretch goals.
+**Software:** Coreflux Broker 2.22 or later and HUB 2.12 or later, both started by
+`project/docker-compose.yml`. Everything runs on your laptop with Docker. See [Prerequisites](#prerequisites).
+
+## Prerequisites
+
+About **2 hours** for the core labs (labs 1 to 6). Stretch goals are extra.
+
+You need:
+
+- **Docker** and **Docker Compose** (how to get them is below)
+- a **web browser** (the HUB is at http://localhost:3000)
+- **internet** the first time you start, so Docker can download the images, and later so the broker
+  can call the weather API
+
+**Coreflux Broker 2.22 or later** and **HUB 2.12 or later** are not installed by hand. Both are
+started by `project/docker-compose.yml`, together with Mailpit (a test inbox).
+
+### Install Docker and Docker Compose
+
+Docker runs the broker, the HUB and Mailpit as containers. Docker Compose starts all three with one
+command. The lesson uses Compose v2: `docker compose` (a space), not the older `docker-compose`.
+
+Check what you already have. In a terminal:
+
+```bash
+docker --version
+docker compose version
+```
+
+Both commands should print a version. `docker compose version` should say `Docker Compose version v2…`.
+
+| System | How to install |
+|---|---|
+| Windows | [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/). It includes Docker Compose. Start Docker Desktop and wait until it says it is running. |
+| macOS | [Docker Desktop for Mac](https://docs.docker.com/desktop/setup/install/mac-install/) (Apple silicon or Intel). It includes Docker Compose. Start Docker Desktop and wait until it says it is running. |
+| Linux | [Docker Engine](https://docs.docker.com/engine/install/) and the [Docker Compose plugin](https://docs.docker.com/compose/install/linux/). |
+
+The overview of every platform is [Get Docker](https://docs.docker.com/get-started/get-docker/).
+
+If a check fails:
+
+- **`docker: command not found`.** Docker is not installed, or this terminal was opened before the
+  install finished. Install from the table above, then open a new terminal.
+- **`Cannot connect to the Docker daemon`.** Start Docker Desktop (Windows and macOS) or the Docker
+  service (Linux), then run the check again.
+- **`docker compose` is not a command, but `docker-compose` is.** That is Compose v1. Update Docker
+  Desktop, or on Linux install the Compose plugin. The lesson's commands are `docker compose`.
 
 ## What "done" looks like
 
@@ -36,24 +81,24 @@ The lesson is on GitHub: https://github.com/CorefluxCommunity/weather-station-ha
 notebooks (`00-setup` … `07-stretch`), `docker-compose.yml` (Broker, HUB and Mailpit), the email
 template and the `exports/` folder.
 
-1. **Download it**, one of:
+1. **Get a local copy, so you can start Docker**, one of:
    - `git clone https://github.com/CorefluxCommunity/weather-station-hackathon.git`
    - on the GitHub page, **Code → Download ZIP**, then unzip it.
 2. **Start it:** `cd weather-station-hackathon/project` (`weather-station-hackathon-main/project`
    for the ZIP) and `docker compose up -d`.
-3. **Open the notebooks**, one of:
-   - **HUB** (http://localhost:3000): the LoT Editor has no clone-from-git command, so import the
-     files from your copy. Open **LoT Editor** from the dock, right-click the project (*Untitled*) →
-     **Import .lotnb**, and pick the notebooks in `project/` one at a time (or drag them onto the
-     tree). Open `01-heartbeat` and click ▷ on its cell (Run Cell), or **Deploy All**. Do not use
-     **Push project to broker**: every lab is deployed cell by cell.
-   - **VS Code:** Command Palette → **Git: Clone**, paste `https://github.com/CorefluxCommunity/weather-station-hackathon.git`, pick a folder and click
-     **Open**. Install the **LoT Notebooks** extension
-     ([guide](https://docs.coreflux.org/latest/quick-start/vscode)), connect it to `localhost:1883`
-     as `root` / `coreflux`, open `project/01-heartbeat.lotnb` and run its cell.
+3. **Open it in the HUB.** The HUB clones straight from GitHub. You do not import the notebooks.
+   Open http://localhost:3000, click **Connect**, then **LoT Editor** from the dock. **New → From git…**,
+   paste `https://github.com/CorefluxCommunity/weather-station-hackathon.git` and click **Clone**.
+   The repository lands in the tree, notebooks and `index.html` included. Click `index.html` for the
+   platform overview (see below). Open `project/01-heartbeat` and click ▷ on its cell (Run Cell), or
+   **Deploy All**. Do not use **Push project to broker**: every lab is deployed cell by cell.
+   **VS Code** is the other editor: Command Palette → **Git: Clone**, paste the same URL, pick a
+   folder and click **Open**. Install the **LoT Notebooks** extension
+   ([guide](https://docs.coreflux.org/latest/quick-start/vscode)), connect it to `localhost:1883`
+   as `root` / `coreflux`, and open `project/01-heartbeat.lotnb`.
 
 ![Project menu in the LoT Editor](docs/screenshots/37-hub-project-menu-no-clone.png)
-*Right-click *Untitled*: **Import .lotnb** (there is no clone-from-git command).*
+*Import is only for a copy that was not cloned. In the HUB, **New → From git…** clones the GitHub repository.*
 
 ![Notebooks imported from the downloaded copy](docs/screenshots/38-cloned-notebooks-imported.png)
 *The eight notebooks from `project/`, imported. `notebook.lotnb` is the project's empty default.*
@@ -64,13 +109,39 @@ template and the `exports/` folder.
 ![Heartbeat in Data Viewer](docs/screenshots/40-cloned-lab1-heartbeat.png)
 *Data Viewer: `campus/weather/heartbeat` shows `ok`.*
 
-## Before you start (15 min)
+## Platform overview
 
-Get the lesson (above), then follow `project/README.md` sections 1 to 3:
+After you clone the lesson into the HUB (**LoT Editor → New → From git…**), click `index.html` in
+the project tree. The slides open in the editor, and the buttons and arrow keys work there. Full
+screen is at the top right of the page.
+
+If you have the files on your laptop, you can also open [index.html](index.html) in a browser. Same
+slides. This is the map of the station: what you will build, then each Coreflux piece the labs use.
+
+| Slide | Piece | What it is for in this lesson |
+|---|---|---|
+| The finished weather station | The result | A live dashboard fed by one Broker |
+| What Coreflux brings | Get, hold, work, send | How a reading moves from the weather API to the dashboard, the file and the email |
+| The Broker | Broker | The base everything else sticks to. The HUB is the window onto it |
+| Topics | Topics | Addresses such as `campus/weather/reading` |
+| Actions | Actions | "When X happens, do Y" |
+| Connectors | Connectors | The weather API, the CSV file and the email |
+| Models | Models | The shape of a reading, field by field |
+| Rules | Rules | Who may change the heat limit |
+| Panels | Panels | The Campus Weather dashboard |
+| Put together | Recap | The same pieces, in the order the labs deploy them |
+| One Thing | `DEFINE THING` | Optional. The stretch goal in `07-stretch` |
+
+The core labs that follow are about **2 hours**.
+
+## Before you start
+
+Clone the lesson into the HUB and open `index.html` there (the [platform overview](#platform-overview)),
+then follow `project/README.md` sections 1 to 3:
 
 1. `docker compose up -d` in the `project` folder, open http://localhost:3000 and click **Connect**
    (the form is already filled in: `root` / `coreflux`).
-2. Import the notebooks (next section) and follow `00-setup`: four variables and a secret in **Command Console**
+2. The GitHub clone already has the notebooks. Follow `00-setup`: four variables and a secret in **Command Console**
    (click `root` at the top right), then publish `30`, retained, to `config/heat_limit_c`.
 
 **Finding your way in the HUB:** the dock at the bottom opens **Data Viewer**, **Connectors**,
@@ -84,20 +155,21 @@ covers every other lab; then Lab 5 is a read-along.
 
 ## The labs
 
-Open **LoT Editor** from the dock. Right-click the project (*Untitled*) → **Import .lotnb** and import
-the eight notebooks from `project/`, one at a time (or drag them onto the tree). There is one
-notebook per lab. Each starts with what you will build, has its cells in run order (one piece per
+Open **LoT Editor** from the dock. After **New → From git…**, the eight notebooks are already in
+the tree under `project/`. There is one notebook per lab. Each starts with what you will build, has its cells in run order (one piece per
 cell) and ends with *Check it worked*. Run a notebook with **Deploy All** (top right), or one cell with
 ▷ at its top left. Check each lab in **Data Viewer**, where you can also **Publish**.
 
 | Lab | Time | Notebook | You build | Check |
 |---|---|---|---|---|
-| 1 | 15 min | `01-heartbeat` | Your first Action | `campus/weather/heartbeat` shows `ok` every 5 s |
-| 2 | 30 min | `02-model-processweather` | The WeatherReading Model and the unit conversion | Publish the sample answer below to `campus/weather/raw`: a reading with `temperature_f` 65.12 appears on `campus/weather/reading` |
-| 3 | 30 min | `03-campus-weather` | The web API Connector and the 5-minute poll | Publish `poll` to `campus/weather/request`: real weather arrives on `raw`, then a reading |
-| 4 | 30 min | `04-heat-alert-history-email` | Alert, history, email | Publish `1` (retained) to `config/heat_limit_c` and `poll`: `heat_active` = `on`, one message on `alerts/heat`, one email in Mailpit, a line in `project/exports/campus-weather.csv`. Then set the limit back to `30`; `heat_active` turns `off` at the next reading |
+| 1 | 10 min | `01-heartbeat` | Your first Action | `campus/weather/heartbeat` shows `ok` every 5 s |
+| 2 | 25 min | `02-model-processweather` | The WeatherReading Model and the unit conversion | Publish the sample answer below to `campus/weather/raw`: a reading with `temperature_f` 65.12 appears on `campus/weather/reading` |
+| 3 | 25 min | `03-campus-weather` | The web API Connector and the 5-minute poll | Publish `poll` to `campus/weather/request`: real weather arrives on `raw`, then a reading |
+| 4 | 25 min | `04-heat-alert-history-email` | Alert, history, email | Publish `1` (retained) to `config/heat_limit_c` and `poll`: `heat_active` = `on`, one message on `alerts/heat`, one email in Mailpit, a line in `project/exports/campus-weather.csv`. Then set the limit back to `30`; `heat_active` turns `off` at the next reading |
 | 5 | 15 min | `05-rules` (event licence) | Protect the heat limit | As `bob` (not in `operators`), publishing to `config/heat_limit_c` does not change it; as `alice` it does. On Community: read along, the Rule is refused |
 | 6 | 20 min | `06-panel` | The Campus Weather panel | **Dashboards** (dock) lists *Campus Weather*; it updates on every `poll` |
+
+Labs 1 to 6 are about **2 hours**.
 
 Deploy the labs in order: later labs use pieces from earlier ones and never define them again.
 
@@ -132,7 +204,7 @@ Screenshots of every step, taken on a fresh laptop setup. Labs 1 to 4 and 6 show
 *Click `root` for Command Console, Broker Settings and Log out.*
 
 ![Import .lotnb](docs/screenshots/04-import-notebook.png)
-*4. LoT Editor (dock): right-click **Untitled** → **Import .lotnb**, once per notebook.*
+*4. A GitHub clone (**New → From git…**) already puts the notebooks in the tree. Import is only if you did not clone.*
 
 ![Notebooks imported](docs/screenshots/05-notebooks-imported.png)
 *5. The eight notebooks in the project tree.*

@@ -3,8 +3,17 @@
 Participants start with [`../HACKATHON.md`](../HACKATHON.md). This file has the setup steps
 and the details the labs point to.
 
-**Versions:** Coreflux Broker 2.21.22 or later and HUB 2.11.4 or later; `docker-compose.yml` sets
-the exact images. The notebooks use `DEFINE CONNECTOR`, which Broker 2.14 and earlier do not have.
+**Versions:** Coreflux Broker 2.22 or later and HUB 2.12 or later; `docker-compose.yml` starts both.
+The notebooks use `DEFINE CONNECTOR`, which Broker 2.14 and earlier do not have. About **2 hours**
+for the core labs.
+
+Install Docker and Docker Compose before section 1. The steps are in
+[Prerequisites](../HACKATHON.md#prerequisites) (`docker` and `docker compose version` should both
+print a version).
+
+Before the labs, clone the lesson into the HUB and click `index.html` in the LoT Editor. The slides
+open there. The slide list is in [Platform overview](../HACKATHON.md#platform-overview). A local
+copy can also be opened as [`../index.html`](../index.html) in a browser.
 
 ## 0. Get the lesson
 
@@ -12,24 +21,24 @@ The lesson is on GitHub: https://github.com/CorefluxCommunity/weather-station-ha
 notebooks (`00-setup` … `07-stretch`), `docker-compose.yml` (Broker, HUB and Mailpit), the email
 template and the `exports/` folder.
 
-1. **Download it**, one of:
+1. **Get a local copy, so you can start Docker**, one of:
    - `git clone https://github.com/CorefluxCommunity/weather-station-hackathon.git`
    - on the GitHub page, **Code → Download ZIP**, then unzip it.
 2. **Start it:** `cd weather-station-hackathon/project` (`weather-station-hackathon-main/project`
    for the ZIP) and `docker compose up -d`.
-3. **Open the notebooks**, one of:
-   - **HUB** (http://localhost:3000): the LoT Editor has no clone-from-git command, so import the
-     files from your copy. Open **LoT Editor** from the dock, right-click the project (*Untitled*) →
-     **Import .lotnb**, and pick the notebooks in `project/` one at a time (or drag them onto the
-     tree). Open `01-heartbeat` and click ▷ on its cell (Run Cell), or **Deploy All**. Do not use
-     **Push project to broker**: every lab is deployed cell by cell.
-   - **VS Code:** Command Palette → **Git: Clone**, paste `https://github.com/CorefluxCommunity/weather-station-hackathon.git`, pick a folder and click
-     **Open**. Install the **LoT Notebooks** extension
-     ([guide](https://docs.coreflux.org/latest/quick-start/vscode)), connect it to `localhost:1883`
-     as `root` / `coreflux`, open `project/01-heartbeat.lotnb` and run its cell.
+3. **Open it in the HUB.** The HUB clones straight from GitHub. You do not import the notebooks.
+   Open http://localhost:3000, click **Connect**, then **LoT Editor** from the dock. **New → From git…**,
+   paste `https://github.com/CorefluxCommunity/weather-station-hackathon.git` and click **Clone**.
+   The repository lands in the tree, notebooks and `index.html` included. Click `index.html` for the
+   platform overview. Open `project/01-heartbeat` and click ▷ on its cell (Run Cell), or **Deploy All**.
+   Do not use **Push project to broker**: every lab is deployed cell by cell.
+   **VS Code** is the other editor: Command Palette → **Git: Clone**, paste the same URL, pick a
+   folder and click **Open**. Install the **LoT Notebooks** extension
+   ([guide](https://docs.coreflux.org/latest/quick-start/vscode)), connect it to `localhost:1883`
+   as `root` / `coreflux`, and open `project/01-heartbeat.lotnb`.
 
 ![Project menu in the LoT Editor](../docs/screenshots/37-hub-project-menu-no-clone.png)
-*Right-click *Untitled*: **Import .lotnb** (there is no clone-from-git command).*
+*Import is only for a copy that was not cloned. In the HUB, **New → From git…** clones the GitHub repository.*
 
 ![Notebooks imported from the downloaded copy](../docs/screenshots/38-cloned-notebooks-imported.png)
 *The eight notebooks from `project/`, imported. `notebook.lotnb` is the project's empty default.*
@@ -42,15 +51,15 @@ template and the `exports/` folder.
 
 ## 1. Start the broker, the HUB and Mailpit
 
-You need Docker Desktop (or Docker Engine with Compose) and internet access (the broker calls
-`api.open-meteo.com`). In this `project` folder:
+You need Docker with Docker Compose (see [Prerequisites](../HACKATHON.md#prerequisites)) and internet
+access (the broker calls `api.open-meteo.com`). In this `project` folder:
 
 ```
 docker compose up -d
 ```
 
-> **Organisers:** before the event, replace the placeholders `GA_BROKER_TAG` and `GA_HUB_TAG` in
-> `docker-compose.yml` with the GA release tags, and check that `docker compose pull` works.
+> The Compose file pins Broker `2.22.0` and HUB `2.12.0`. Before the event, check that
+> `docker compose pull` works.
 
 | What | Where |
 |---|---|
@@ -149,10 +158,9 @@ There is one notebook per lab, in order. Each notebook explains the lab, has its
 
 **HUB (main path):**
 
-1. Open **LoT Editor** from the dock.
-2. Right-click the project (*Untitled*) in the tree → **Import .lotnb**, once per notebook (or drag
-   the files onto the tree).
-3. Open a lab's notebook and click **Deploy All** (top right; it runs the notebook's cells top to
+1. Open **LoT Editor** from the dock. **New → From git…** clones the GitHub repository, so the
+   notebooks are already in the tree under `project/`.
+2. Open a lab's notebook and click **Deploy All** (top right; it runs the notebook's cells top to
    bottom), or click ▷ at the top left of one cell. Each cell reports *… added successfully*.
 
 Deploy one lab notebook at a time, in order: later labs use pieces from earlier ones. Keep the
