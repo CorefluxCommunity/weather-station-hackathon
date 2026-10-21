@@ -3,8 +3,16 @@
 Participants start with [`../HACKATHON.md`](../HACKATHON.md). This file has the setup steps
 and the details the labs point to.
 
-**Versions:** Coreflux Broker 2.21.22 or later and HUB 2.11.4 or later; `docker-compose.yml` sets
-the exact images. The notebooks use `DEFINE CONNECTOR`, which Broker 2.14 and earlier do not have.
+**Versions:** Coreflux Broker 2.22 or later and HUB 2.12 or later; `docker-compose.yml` starts both.
+The notebooks use `DEFINE CONNECTOR`, which Broker 2.14 and earlier do not have. About **2 hours**
+for the core labs.
+
+Install Docker and Docker Compose before section 1. The steps are in
+[Prerequisites](../HACKATHON.md#prerequisites) (`docker` and `docker compose version` should both
+print a version).
+
+Before the labs, open the platform overview in a browser: [`../index.html`](../index.html). The
+slide list is in [Platform overview](../HACKATHON.md#platform-overview).
 
 ## 0. Get the lesson
 
@@ -42,8 +50,8 @@ template and the `exports/` folder.
 
 ## 1. Start the broker, the HUB and Mailpit
 
-You need Docker Desktop (or Docker Engine with Compose) and internet access (the broker calls
-`api.open-meteo.com`). In this `project` folder:
+You need Docker with Docker Compose (see [Prerequisites](../HACKATHON.md#prerequisites)) and internet
+access (the broker calls `api.open-meteo.com`). In this `project` folder:
 
 ```
 docker compose up -d

@@ -4,9 +4,54 @@ You will build a weather station that runs entirely inside one Coreflux Broker. 
 weather API for your site, converts the units, raises a heat alert, keeps a CSV history,
 emails the team once per heat episode and shows a live dashboard.
 
-**Time:** about 3 hours for the core labs, plus stretch goals.
-**Software:** Coreflux Broker and HUB, both started by `project/docker-compose.yml`. Everything runs on
-your laptop with Docker.
+**Time:** about 2 hours for the core labs, plus stretch goals.
+**Software:** Coreflux Broker 2.22 or later and HUB 2.12 or later, both started by
+`project/docker-compose.yml`. Everything runs on your laptop with Docker. See [Prerequisites](#prerequisites).
+
+## Prerequisites
+
+About **2 hours** for the core labs (labs 1 to 6). Stretch goals are extra.
+
+You need:
+
+- **Docker** and **Docker Compose** (how to get them is below)
+- a **web browser** (the HUB is at http://localhost:3000)
+- **internet** the first time you start, so Docker can download the images, and later so the broker
+  can call the weather API
+
+**Coreflux Broker 2.22 or later** and **HUB 2.12 or later** are not installed by hand. Both are
+started by `project/docker-compose.yml`, together with Mailpit (a test inbox).
+
+### Install Docker and Docker Compose
+
+Docker runs the broker, the HUB and Mailpit as containers. Docker Compose starts all three with one
+command. The lesson uses Compose v2: `docker compose` (a space), not the older `docker-compose`.
+
+Check what you already have. In a terminal:
+
+```bash
+docker --version
+docker compose version
+```
+
+Both commands should print a version. `docker compose version` should say `Docker Compose version v2…`.
+
+| System | How to install |
+|---|---|
+| Windows | [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/). It includes Docker Compose. Start Docker Desktop and wait until it says it is running. |
+| macOS | [Docker Desktop for Mac](https://docs.docker.com/desktop/setup/install/mac-install/) (Apple silicon or Intel). It includes Docker Compose. Start Docker Desktop and wait until it says it is running. |
+| Linux | [Docker Engine](https://docs.docker.com/engine/install/) and the [Docker Compose plugin](https://docs.docker.com/compose/install/linux/). |
+
+The overview of every platform is [Get Docker](https://docs.docker.com/get-started/get-docker/).
+
+If a check fails:
+
+- **`docker: command not found`.** Docker is not installed, or this terminal was opened before the
+  install finished. Install from the table above, then open a new terminal.
+- **`Cannot connect to the Docker daemon`.** Start Docker Desktop (Windows and macOS) or the Docker
+  service (Linux), then run the check again.
+- **`docker compose` is not a command, but `docker-compose` is.** That is Compose v1. Update Docker
+  Desktop, or on Linux install the Compose plugin. The lesson's commands are `docker compose`.
 
 ## What "done" looks like
 
@@ -64,9 +109,32 @@ template and the `exports/` folder.
 ![Heartbeat in Data Viewer](docs/screenshots/40-cloned-lab1-heartbeat.png)
 *Data Viewer: `campus/weather/heartbeat` shows `ok`.*
 
-## Before you start (15 min)
+## Platform overview
 
-Get the lesson (above), then follow `project/README.md` sections 1 to 3:
+Open [index.html](index.html) in a browser before the labs. Use the arrow keys or the buttons to
+move through the slides (full screen is at the top right). This is the map of the station: what you
+will build, then each Coreflux piece the labs use.
+
+| Slide | Piece | What it is for in this lesson |
+|---|---|---|
+| The finished weather station | The result | A live dashboard fed by one Broker |
+| What Coreflux brings | Get, hold, work, send | How a reading moves from the weather API to the dashboard, the file and the email |
+| The Broker | Broker | The base everything else sticks to. The HUB is the window onto it |
+| Topics | Topics | Addresses such as `campus/weather/reading` |
+| Actions | Actions | "When X happens, do Y" |
+| Connectors | Connectors | The weather API, the CSV file and the email |
+| Models | Models | The shape of a reading, field by field |
+| Rules | Rules | Who may change the heat limit |
+| Panels | Panels | The Campus Weather dashboard |
+| Put together | Recap | The same pieces, in the order the labs deploy them |
+| One Thing | `DEFINE THING` | Optional. The stretch goal in `07-stretch` |
+
+The core labs that follow are about **2 hours**.
+
+## Before you start
+
+Open the [platform overview](#platform-overview) (`index.html`), get the lesson (above), then follow
+`project/README.md` sections 1 to 3:
 
 1. `docker compose up -d` in the `project` folder, open http://localhost:3000 and click **Connect**
    (the form is already filled in: `root` / `coreflux`).
@@ -92,12 +160,14 @@ cell) and ends with *Check it worked*. Run a notebook with **Deploy All** (top r
 
 | Lab | Time | Notebook | You build | Check |
 |---|---|---|---|---|
-| 1 | 15 min | `01-heartbeat` | Your first Action | `campus/weather/heartbeat` shows `ok` every 5 s |
-| 2 | 30 min | `02-model-processweather` | The WeatherReading Model and the unit conversion | Publish the sample answer below to `campus/weather/raw`: a reading with `temperature_f` 65.12 appears on `campus/weather/reading` |
-| 3 | 30 min | `03-campus-weather` | The web API Connector and the 5-minute poll | Publish `poll` to `campus/weather/request`: real weather arrives on `raw`, then a reading |
-| 4 | 30 min | `04-heat-alert-history-email` | Alert, history, email | Publish `1` (retained) to `config/heat_limit_c` and `poll`: `heat_active` = `on`, one message on `alerts/heat`, one email in Mailpit, a line in `project/exports/campus-weather.csv`. Then set the limit back to `30`; `heat_active` turns `off` at the next reading |
+| 1 | 10 min | `01-heartbeat` | Your first Action | `campus/weather/heartbeat` shows `ok` every 5 s |
+| 2 | 25 min | `02-model-processweather` | The WeatherReading Model and the unit conversion | Publish the sample answer below to `campus/weather/raw`: a reading with `temperature_f` 65.12 appears on `campus/weather/reading` |
+| 3 | 25 min | `03-campus-weather` | The web API Connector and the 5-minute poll | Publish `poll` to `campus/weather/request`: real weather arrives on `raw`, then a reading |
+| 4 | 25 min | `04-heat-alert-history-email` | Alert, history, email | Publish `1` (retained) to `config/heat_limit_c` and `poll`: `heat_active` = `on`, one message on `alerts/heat`, one email in Mailpit, a line in `project/exports/campus-weather.csv`. Then set the limit back to `30`; `heat_active` turns `off` at the next reading |
 | 5 | 15 min | `05-rules` (event licence) | Protect the heat limit | As `bob` (not in `operators`), publishing to `config/heat_limit_c` does not change it; as `alice` it does. On Community: read along, the Rule is refused |
 | 6 | 20 min | `06-panel` | The Campus Weather panel | **Dashboards** (dock) lists *Campus Weather*; it updates on every `poll` |
+
+Labs 1 to 6 are about **2 hours**.
 
 Deploy the labs in order: later labs use pieces from earlier ones and never define them again.
 
