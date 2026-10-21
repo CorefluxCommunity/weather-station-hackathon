@@ -58,8 +58,8 @@ access (the broker calls `api.open-meteo.com`). In this `project` folder:
 docker compose up -d
 ```
 
-> **Organisers:** before the event, replace the placeholders `GA_BROKER_TAG` and `GA_HUB_TAG` in
-> `docker-compose.yml` with the GA release tags, and check that `docker compose pull` works.
+> The Compose file pins Broker `2.22.0` and HUB `2.12.0`. Before the event, check that
+> `docker compose pull` works.
 
 | What | Where |
 |---|---|

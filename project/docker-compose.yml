@@ -6,16 +6,15 @@
 #
 # Then open the HUB at http://localhost:3000 and Mailpit at http://localhost:8025.
 #
-# Images: the lesson needs Broker 2.22 or later and HUB 2.12 or later.
-# Organisers: replace GA_BROKER_TAG and GA_HUB_TAG below with the GA release tags
-# before handing this out (or set BROKER_IMAGE / HUB_IMAGE to full image names).
+# Images: Broker 2.22.0 and HUB 2.12.0.
+# Set BROKER_IMAGE / HUB_IMAGE to full image names to override the tags.
 #
 # Licence (Lab 5): either send -activateLicense <code> from the HUB Command Console
 # (see README section 2), or put the event activation code in COREFLUX_ACTIVATION_CODE
 # below before the first `docker compose up`. Leave it empty for Community Edition.
 services:
   broker:
-    image: ${BROKER_IMAGE:-coreflux/coreflux-mqtt-broker:GA_BROKER_TAG}
+    image: ${BROKER_IMAGE:-coreflux/coreflux-mqtt-broker:2.22.0}
     container_name: weather-broker
     restart: unless-stopped
     ports:
@@ -31,7 +30,7 @@ services:
       disable: true
 
   hub:
-    image: ${HUB_IMAGE:-coreflux/coreflux-hub:GA_HUB_TAG}
+    image: ${HUB_IMAGE:-coreflux/coreflux-hub:2.12.0}
     container_name: weather-hub
     restart: unless-stopped
     ports:
