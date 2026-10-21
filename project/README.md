@@ -1,125 +1,72 @@
-# Campus weather station: setup and reference
+# Campus Weather Station — Setup & Reference
 
-Participants start with [`../HACKATHON.md`](../HACKATHON.md). This file has the setup steps
-and the details the labs point to.
+> **Doing the hackathon?** Start with **[`../HACKATHON.md`](../HACKATHON.md)** for the full step-by-step walkthrough with screenshots (and **[`../PREREQUISITES.md`](../PREREQUISITES.md)** to verify Docker first). This page is a quick reference for commands, ports, licensing, and project files.
 
-**Versions:** Coreflux Broker 2.22 or later and HUB 2.12 or later; `docker-compose.yml` starts both.
-The notebooks use `DEFINE CONNECTOR`, which Broker 2.14 and earlier do not have. About **2 hours**
-for the core labs.
+---
 
-Install Docker and Docker Compose before section 1. The steps are in
-[Prerequisites](../PREREQUISITES.md) (`docker` and `docker compose version` should both
-print a version).
+## 1. Start, stop, and reset the environment
 
-Before the labs, clone the lesson into the HUB and click `index.html` in the LoT Editor. The slides
-open there. The slide list is in [Platform overview](../HACKATHON.md#platform-overview). A local
-copy can also be opened as [`../index.html`](../index.html) in a browser.
+Run all Docker Compose commands from inside this `project/` folder:
 
-## 0. Get the lesson
-
-The lesson is on GitHub: https://github.com/CorefluxCommunity/weather-station-hackathon. Everything you run is in the `project/` folder: the eight lab
-notebooks (`00-setup` … `07-stretch`), `docker-compose.yml` (Broker, HUB and Mailpit), the email
-template and the `exports/` folder.
-
-1. **Get a local copy, so you can start Docker**, one of:
-   - `git clone https://github.com/CorefluxCommunity/weather-station-hackathon.git`
-   - on the GitHub page, **Code → Download ZIP**, then unzip it.
-2. **Start it:** `cd weather-station-hackathon/project` (`weather-station-hackathon-main/project`
-   for the ZIP) and `docker compose up -d`.
-3. **Open it in the HUB.** The HUB clones straight from GitHub. You do not import the notebooks.
-   Open http://localhost:3000, click **Connect**, then **LoT Editor** from the dock. **New → From git…**,
-   paste `https://github.com/CorefluxCommunity/weather-station-hackathon.git` and click **Clone**.
-   The repository lands in the tree, notebooks and `index.html` included. Click `index.html` for the
-   platform overview. Open `project/01-heartbeat` and click ▷ on its cell (Run Cell), or **Deploy All**.
-   Do not use **Push project to broker**: every lab is deployed cell by cell.
-   **VS Code** is the other editor. Install LoT Notebooks **v1.0.0** from
-   [../vscode/vscode-lot-notebooks-1.0.0.vsix](../vscode/vscode-lot-notebooks-1.0.0.vsix): Extensions
-   view, `…` menu → **Install from VSIX…**, and pick that file. Or, from the repository root:
-   `code --install-extension vscode/vscode-lot-notebooks-1.0.0.vsix`. Then Command Palette →
-   **Git: Clone**, paste the same URL, open `project/01-heartbeat.lotnb`, and connect to
-   `localhost:1883` as `root` / `coreflux`
-   ([guide](https://docs.coreflux.org/latest/quick-start/vscode)). To change the extension while you
-   use the lesson, follow the [development option](../vscode/README.md#development).
-
-![Project menu in the LoT Editor](../docs/screenshots/37-hub-project-menu-no-clone.png)
-*Import is only for a copy that was not cloned. In the HUB, **New → From git…** clones the GitHub repository.*
-
-![Notebooks imported from the downloaded copy](../docs/screenshots/38-cloned-notebooks-imported.png)
-*The eight notebooks from `project/`, imported. `notebook.lotnb` is the project's empty default.*
-
-![Run Cell on 01-heartbeat](../docs/screenshots/39-cloned-lab1-run-cell.png)
-*Click ▷ on the cell: *Action 'Heartbeat' added successfully*.*
-
-![Heartbeat in Data Viewer](../docs/screenshots/40-cloned-lab1-heartbeat.png)
-*Data Viewer: `campus/weather/heartbeat` shows `ok`.*
-
-## 1. Start the broker, the HUB and Mailpit
-
-You need Docker with Docker Compose (see [Prerequisites](../PREREQUISITES.md)) and internet
-access (the broker calls `api.open-meteo.com`). In this `project` folder:
-
-```
+```bash
+# Start Broker, HUB, and Mailpit, then wait for the weather-station project to load
 docker compose up -d
+docker compose wait load-project
+
+# Check logs of the project loader if needed
+docker compose logs load-project
+
+# Stop containers (keeps your broker state and licence in the Docker volume)
+docker compose down
+
+# Full reset: stop containers AND wipe all broker data to start from zero
+docker compose down -v
 ```
 
-> The Compose file pins Broker `2.22.0` and HUB `2.12.0`. Before the event, check that
-> `docker compose pull` works.
+### Services & ports
 
-| What | Where |
-|---|---|
-| HUB | http://localhost:3000 |
-| Mailpit (test inbox) | http://localhost:8025 |
-| Broker MQTT, for VS Code and `mosquitto_pub` | `localhost:1883`, user `root`, password `coreflux` |
-| Broker health | http://localhost:9100/health |
-
-Open the HUB. The connection form is already filled in (*Weather station*, `mqtt://broker:1883`,
-user `root`, password `coreflux`): click **Connect**. (The host is `broker`, not `localhost`: the HUB
-reaches the broker from inside Docker.) A short HUB tour opens; click **Skip** or follow it.
-
-**Finding your way in the HUB:** the dock at the bottom opens **Data Viewer**, **Connectors**,
-**LoT Editor** and **Dashboards** (hover an icon to see its name). Click your user name (`root`) at the
-top right for **Command Console**, **Broker Settings** and logging out. The licence (*Community* on a
-fresh broker) is shown next to it.
-
-Ports 1883, 3000, 8025 or 9100 already in use on your machine? Change the left-hand number in
-`docker-compose.yml` (for example `"3001:3000"`) and use that port instead.
-
-To start the labs from zero again: `docker compose down -v`, then `docker compose up -d`.
-
-## 2. Licence
-
-A fresh broker runs as **Community Edition**. That covers every lab except Lab 5 (Rules).
-
-| Notebook | Community | Event licence (trial / Growth / Enterprise) |
+| Service | Address | Credentials / Notes |
 |---|---|---|
-| 00–02, 06, 07 | yes | yes |
-| 03, 04 (3 Connectors in all) | yes, they use all 3 allowed Connectors | yes |
-| 05 (Rule) | read-along only: the broker refuses your own Rules | yes |
+| **Coreflux HUB** | http://localhost:3000 | Pre-filled connection: host `broker`, port `1883`, user `root`, password `coreflux` |
+| **Mailpit (test inbox)** | http://localhost:8025 | Web inbox for viewing alert emails sent in Lab 4 |
+| **Coreflux Broker (MQTT)** | `localhost:1883` | For VS Code or external MQTT clients (`root` / `coreflux`) |
+| **Broker health & licence** | http://localhost:9100/health · `/license` | HTTP health and active licence tier |
 
-**Event licence:** the organisers give you an activation code (`CFLX-…`). Open **Broker Settings**
-(click `root` at the top right) → **License** → **Activation code**, paste it and click **Activate**.
-Or send it in **Command Console**:
+> **Port already in use?** If port `1883`, `3000`, `8025`, or `9100` is taken on your machine, edit the left-hand port number in `docker-compose.yml` (for example, `"3001:3000"`) and run `docker compose up -d` again.
 
-```
--activateLicense CFLX-your-code
-```
+> **Pinned image versions:** `docker-compose.yml` uses **Coreflux Broker `2.22.0`** and **Coreflux HUB `2.12.0`** (`DEFINE CONNECTOR` requires Broker 2.22+). Organisers should run `docker compose pull` before the event to pre-cache the images.
 
-The answer names the plan you got, and the licence at the top right of the HUB changes from
-*Community*. The broker needs internet access for this. Each broker that activates uses one seat of the
-event licence, so activate once and keep your broker: `docker compose down -v` wipes the licence with
-the rest of the data, and activating again may use another seat. (Organisers: ask for a licence with
-one seat per laptop plus a few spare; you can also put the code in `COREFLUX_ACTIVATION_CODE` in
-`docker-compose.yml` before the first `docker compose up`.)
+---
 
-The licence in use is shown at the top right of the HUB, in **Broker Settings → License**, and at
-http://localhost:9100/license (`"tier"`).
+## 2. Licensing (Community vs. Event Licence)
 
-## 3. Set the variables
+A fresh broker starts on **Community Edition**, which covers every lab except deploying custom RBAC Rules in **Lab 5** (and the 4th Connector in Stretch Goal 6).
 
-These steps are also in `00-setup.lotnb`. In the HUB, open **Command Console** (click `root` at the
-top right) and send these lines one at a time:
+| Notebook | Community Edition | Event Licence (Trial / Growth / Enterprise) |
+|---|---|---|
+| `00-setup`, `01-heartbeat`, `02-model-processweather`, `06-panel` | Supported | Supported |
+| `03-campus-weather` + `04-heat-alert-history-email` (3 Connectors total) | Supported (uses all 3 Community Connectors) | Supported |
+| `05-rules` (`DEFINE RULE`) | Read-along only (custom Rules require a licence) | Supported |
+| `07-stretch` (Stretch Goal 6: `DEFINE THING`) | Remove 1 Connector first (`-removeConnector <Name>`) | Supported |
 
-```
+### Activating an event licence code
+
+1. In the HUB, click **`root` (top right) → Broker Settings → License → Activation code**.
+2. Paste the `CFLX-…` code provided by the organisers and click **Activate** (or run `-activateLicense CFLX-your-code` in **Command Console**).
+3. The badge next to `root` at the top right updates from `Community` to your licence tier.
+
+> **Note on seats:** Each broker activation uses one seat of the event licence. Avoid running `docker compose down -v` after activating, as wiping the volume removes the licence from your container.
+> *(For organisers: you can also pre-populate `COREFLUX_ACTIVATION_CODE` in `docker-compose.yml` before the first `docker compose up`.)*
+
+---
+
+## 3. Initial setup commands (`00-setup.lotnb`)
+
+### Environment variables & secret
+
+In the HUB, open **Command Console** (`root` at top right → **Command Console**) and run one line at a time:
+
+```text
 -setEnv WEATHER_LAT=40.7128
 -setEnv WEATHER_LON=-74.0060
 -setEnv SMTP_HOST=mailpit
@@ -127,88 +74,68 @@ top right) and send these lines one at a time:
 -setSecret SMTP_PASSWORD=any-password
 ```
 
-Each one answers with a line of JSON containing `"success":true` and *… set successfully*. Check
-in **Broker Settings → Variables & Secrets** (you can also add them there), or with `-listEnv` and
-`-listSecrets`. A secret's value is never shown.
+- **Format:** `NAME=value` with **no spaces** around `=`.
+- **Avoid `//` in passwords:** `//` starts a comment in broker commands and truncates the value.
+- **Inspect:** View them in **Broker Settings → Variables & Secrets**, or run `-listEnv` and `-listSecrets` in Command Console.
 
-- `WEATHER_LAT` / `WEATHER_LON` are your site (the example is New York). The CampusWeather
-  Connector puts them into the request as `{env.WEATHER_LAT}` and `{env.WEATHER_LON}`.
-- Write `NAME=value` with no spaces around `=`. `-setEnv NAME value` is refused with
-  *Invalid format. Use: NAME=value*.
-- Mailpit accepts any user and password. For a real mailbox, use your provider's host, user and
-  password, and change the HeatMail cell (`04-heat-alert-history-email`).
-- A password containing `//` is cut there (`//` starts a comment). Choose one without it.
+### Initial heat limit (`30` °C)
 
-Docs: [Secrets and environment variables](https://docs.coreflux.org/latest/mqtt-broker/secrets-and-env).
+In **Data Viewer → Publish** (paper-plane icon):
+- **Topic:** `config/heat_limit_c`
+- **Payload:** `30`
+- **Retain:** **ON**
 
-**Heat limit:** in **Data Viewer**, open **Publish** (paper-plane icon on the left): topic `config/heat_limit_c`,
-payload `30`, **Retain** switched on, then **Publish**. That is the heat limit in °C; while the topic is empty the alert stays off.
+---
 
-## 4. Deploy the notebooks
+## 4. Lab notebooks overview
 
-There is one notebook per lab, in order. Each notebook explains the lab, has its cells in run order
-(one piece, one `DEFINE`, per cell) and ends with *Check it worked*.
+When `load-project` finishes at startup, the `weather-station` project is already open in **LoT Editor** with all 8 notebooks under `project/`:
 
-| Notebook | Lab | Pieces |
+| Notebook | Lab | What is inside |
 |---|---|---|
-| `00-setup` | Before you start | commands only: variables, secret, heat limit |
-| `01-heartbeat` | 1 | Action Heartbeat |
-| `02-model-processweather` | 2 | Model WeatherReading, Action ProcessWeather |
-| `03-campus-weather` | 3 | Connector CampusWeather, Action RequestWeather |
-| `04-heat-alert-history-email` | 4 | Action HeatAlert, Connectors WeatherHistory and HeatMail |
-| `05-rules` | 5 (event licence) | Rule ProtectWeatherConfig |
-| `06-panel` | 6 | Panel CampusWeather |
-| `07-stretch` | stretch goals | hints only; add your own cells |
+| `00-setup.lotnb` | Setup | Variables, secret, and initial `config/heat_limit_c` publish |
+| `01-heartbeat.lotnb` | Lab 1 | `Heartbeat` Action (publishes `ok` every 5s) |
+| `02-model-processweather.lotnb` | Lab 2 | `WeatherReading` Model + `ProcessWeather` Action |
+| `03-campus-weather.lotnb` | Lab 3 | `CampusWeather` REST Connector + `RequestWeather` Action |
+| `04-heat-alert-history-email.lotnb` | Lab 4 | `HeatAlert` Action + `WeatherHistory` CSV Connector + `HeatMail` Email Connector |
+| `05-rules.lotnb` | Lab 5 | `ProtectWeatherConfig` Rule |
+| `06-panel.lotnb` | Lab 6 | `CampusWeather` Dashboard Panel |
+| `07-stretch.lotnb` | Stretch | 6 optional challenges and hints |
 
-**HUB (main path):**
+### Deploying cells
 
-1. Open **LoT Editor** from the dock. **New → From git…** clones the GitHub repository, so the
-   notebooks are already in the tree under `project/`.
-2. Open a lab's notebook and click **Deploy All** (top right; it runs the notebook's cells top to
-   bottom), or click ▷ at the top left of one cell. Each cell reports *… added successfully*.
+- **In the HUB:** Open a notebook in **LoT Editor** and click **▷** on a cell (or **Deploy All** at the top right of the notebook). Re-running a cell updates that entity in place.
+- **Via raw MQTT commands** (if using an external MQTT client as `root`, publishing to `$SYS/Coreflux/Command` and reading `$SYS/Coreflux/Command/Output`):
 
-Deploy one lab notebook at a time, in order: later labs use pieces from earlier ones. Keep the
-deploy button on **Deploy All**; the lesson does not use its other mode, and does not use
-**Push project to broker**.
-
-**VS Code:** install LoT Notebooks v1.0.0 from
-[`../vscode/vscode-lot-notebooks-1.0.0.vsix`](../vscode/vscode-lot-notebooks-1.0.0.vsix)
-([install steps](../vscode/README.md#install-the-extension)), connect to `localhost:1883` as `root`,
-open the notebooks and run each cell in order. The [development option](../vscode/README.md#development)
-runs the same v1.0.0 from source.
-
-**MQTT commands** (any MQTT client, as `root`): publish the cell's text to `$SYS/Coreflux/Command`
-after the matching command, and read the answer on `$SYS/Coreflux/Command/Output`:
-
-| Cell starts with | Command |
+| LoT definition | Broker command |
 |---|---|
-| `DEFINE MODEL` | `-addModel` |
-| `DEFINE ACTION` | `-addAction` |
-| `DEFINE CONNECTOR` | `-addConnector` |
-| `DEFINE RULE` | `-addRule` |
-| `DEFINE PANEL` | `-addPanel` |
+| `DEFINE MODEL …` | `-addModel <code…>` |
+| `DEFINE ACTION …` | `-addAction <code…>` |
+| `DEFINE CONNECTOR …` | `-addConnector <code…>` |
+| `DEFINE RULE …` | `-addRule <code…>` (remove existing first with `-removeRule <Name>`) |
+| `DEFINE PANEL …` | `-addPanel <code…>` |
 
-**Changing something:** edit the cell and run it again. Models, Actions, Connectors and Panels are
-replaced in place. A Rule must be removed first (`-removeRule <Name>`); the HUB's ▷ does that for
-you.
+---
 
-## 5. Files
+## 5. Mounted folders and files
 
-- `templates/heat-alert.html` is the email body. The compose file mounts `templates/` at
-  `/templates` in the broker. **If the file is missing, the email still goes out with the raw JSON
-  reading as its body, and no error is shown.**
-- `exports/campus-weather.csv` is the history the WeatherHistory Connector writes (`/data/exports` in
-  the broker). It appears after the first reading.
+- **`templates/heat-alert.html`** → mounted at `/templates/heat-alert.html` inside the broker. Used by the `HeatMail` Connector for the HTML email body. *(If missing, the broker sends the raw JSON payload as the email body without raising an error.)*
+- **`exports/campus-weather.csv`** → mounted at `/data/exports/campus-weather.csv` inside the broker. Created and appended to by the `WeatherHistory` Connector on every reading.
 
-## 6. Quick test (after all notebooks)
+---
 
-1. **Data Viewer:** `campus/weather/heartbeat` shows `ok` every 5 seconds.
-2. Publish `poll` to `campus/weather/request`. Within a few seconds: the Open-Meteo answer on
-   `campus/weather/raw`, a reading on `campus/weather/reading`, `off` on
-   `campus/weather/alerts/heat_active`, and a new line in `exports/campus-weather.csv`.
-3. Publish `1` (retained) to `config/heat_limit_c`, then `poll` again: `heat_active` turns `on`, one
-   message arrives on `campus/weather/alerts/heat`, and one email *Campus heat alert* in Mailpit.
-   Poll again: no second email (same heat episode).
-4. Publish `30` (retained) to `config/heat_limit_c` to put the limit back. `heat_active` turns `off`
-   at the next reading.
-5. The **Campus Weather** panel (**Dashboards** in the dock) shows the latest °C, °F, wind and heat state.
+## 6. End-to-end verification checklist
+
+1. **Heartbeat:** In **Data Viewer**, `campus/weather/heartbeat` receives `ok` every 5 seconds.
+2. **Weather poll:** Publish `poll` to `campus/weather/request`. Within a few seconds:
+   - `campus/weather/raw` receives the Open-Meteo JSON response.
+   - `campus/weather/reading` receives the converted `WeatherReading` JSON.
+   - `campus/weather/alerts/heat_active` shows `off`.
+   - `project/exports/campus-weather.csv` gains a new row.
+3. **Heat alert & email:** Publish `1` (Retain **ON**) to `config/heat_limit_c`, then publish `poll` to `campus/weather/request`:
+   - `campus/weather/alerts/heat_active` switches to `on`.
+   - `campus/weather/alerts/heat` receives the reading.
+   - Mailpit (http://localhost:8025) receives one *Campus heat alert* email.
+   - Publishing `poll` a second time sends **no** second email (same heat episode).
+4. **Reset:** Publish `30` (Retain **ON**) to `config/heat_limit_c`, then `poll` — `heat_active` switches back to `off`.
+5. **Dashboard:** Open **Dashboards → Campus Weather** in the HUB to see °C, °F, wind speed, and heat alert status update live.

@@ -2,12 +2,12 @@
  {
   "kind": 1,
   "language": "markdown",
-  "value": "# Lab 2: the WeatherReading Model and the unit conversion\n\n**Goal:** turn a weather-API answer into a clean reading in °C and °F.\n\n**You will build:**\n1. `WeatherReading`, a Model: the shape of a reading, one field per value.\n2. `ProcessWeather`, an Action: when an answer lands on `campus/weather/raw`, it converts the units and publishes one `WeatherReading` to `campus/weather/reading`.\n\nRun the cells in order: the Action uses the Model."
+  "value": "# Lab 2: The WeatherReading Model and Unit Conversion\n\n**Goal:** Turn a raw weather-API response into a clean, structured reading with both metric (°C, km/h) and imperial (°F, mph) units.\n\n**What you will build:**\n1. **`WeatherReading` (Model):** Defines the exact JSON schema of a clean weather reading — five fields with explicit types.\n2. **`ProcessWeather` (Action):** Listens on `campus/weather/raw`, validates that the response contains temperature data, converts °C to °F and km/h to mph, and publishes a `WeatherReading` to `campus/weather/reading`.\n\n> **Important:** Run the cells **in order** (Cell 1 first, then Cell 2), or click **Deploy All** — `ProcessWeather` references `WeatherReading`."
  },
  {
   "kind": 1,
   "language": "markdown",
-  "value": "## 1. The Model\n\n`COLLAPSED` means the Model has no trigger of its own: it publishes only when an Action asks for it with `PUBLISH MODEL`."
+  "value": "## 1. The `WeatherReading` Model\n\nA **Model** (`DEFINE MODEL`) is a data contract. The keyword `COLLAPSED` means the Broker bundles all five fields into a single JSON object on one topic whenever an Action runs `PUBLISH MODEL WeatherReading TO ...`."
  },
  {
   "kind": 2,
@@ -17,7 +17,7 @@
  {
   "kind": 1,
   "language": "markdown",
-  "value": "## 2. ProcessWeather\n\nIf the answer has no `current.temperature_2m` (for example the API returned an error), the payload goes to `campus/weather/errors` and no reading is published.\n\nWhy test for both `EMPTY` and `\"null\"`? A JSON field that is missing comes back as the text `null`, not as `EMPTY`."
+  "value": "## 2. The `ProcessWeather` Action\n\nWhen a raw JSON message arrives on `campus/weather/raw`:\n- If `current.temperature_2m` is missing (for example, if the weather API returned an error object), `ProcessWeather` forwards the raw payload to `campus/weather/errors` and stops.\n- Why check for both `EMPTY` and `\"null\"`? A JSON field that is missing comes back as the string `\"null\"`, whereas an empty payload comes back as `EMPTY`.\n- Otherwise, it extracts `temperature_2m` and `wind_speed_10m`, calculates Fahrenheit and mph, and publishes the structured `WeatherReading` model to `campus/weather/reading`."
  },
  {
   "kind": 2,
@@ -27,6 +27,6 @@
  {
   "kind": 1,
   "language": "markdown",
-  "value": "## Check it worked\n\nThe weather API is not connected yet (that is Lab 3), so pretend to be it. In **Data Viewer → Publish**, publish this to `campus/weather/raw` (Retain off):\n\n```json\n{\"current\": {\"temperature_2m\": 18.4, \"wind_speed_10m\": 12.6}}\n```\n\nA reading appears on `campus/weather/reading` with `temperature_c` 18.4 and `temperature_f` 65.12.\n\nDocs: [MODEL publishing](https://docs.coreflux.org/latest/lot-language/models/publish-model) · [Operations (GET JSON, EMPTY)](https://docs.coreflux.org/latest/lot-language/actions/operations)."
+  "value": "## Check It Worked\n\nThe real weather API isn't connected yet (that's Lab 3), so let's simulate it! Open **Data Viewer → Publish** and send this sample payload to `campus/weather/raw` (with **Retain** off):\n\n```json\n{\"current\": {\"temperature_2m\": 18.4, \"wind_speed_10m\": 12.6}}\n```\n\nIn the topic tree under `campus/weather/reading`, you will see a formatted JSON reading with `\"temperature_c\": 18.4` and `\"temperature_f\": 65.12`.\n\nDocs: [MODEL publishing](https://docs.coreflux.org/latest/lot-language/models/publish-model) · [Operations (GET JSON, EMPTY)](https://docs.coreflux.org/latest/lot-language/actions/operations)."
  }
 ]

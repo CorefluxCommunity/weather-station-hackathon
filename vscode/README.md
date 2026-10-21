@@ -1,29 +1,57 @@
-# LoT Notebooks for VS Code (v1.0.0)
+# Using VS Code with LoT Notebooks (Optional)
 
-The labs run in the HUB. VS Code is the other editor. This folder ships the extension that opens the notebooks.
+By default, all hackathon labs run in your browser inside the **Coreflux HUB** (`http://localhost:3000`).
 
-The file `vscode-lot-notebooks-1.0.0.vsix` is the [v1.0.0 release](https://github.com/CorefluxCommunity/VSCodeLotNotebook/releases/tag/v1.0.0) of [VSCodeLotNotebook](https://github.com/CorefluxCommunity/VSCodeLotNotebook).
+If you prefer editing and running `.lotnb` notebooks in **VS Code**, this folder includes the packaged **LoT Notebooks v1.0.0** extension (`vscode-lot-notebooks-1.0.0.vsix`, from the [v1.0.0 release](https://github.com/CorefluxCommunity/VSCodeLotNotebook/releases/tag/v1.0.0) of [VSCodeLotNotebook](https://github.com/CorefluxCommunity/VSCodeLotNotebook)).
 
-Start the broker first (`docker compose up -d` in `project/`). The extension connects to `localhost:1883` as `root` / `coreflux`.
+---
 
-## Install the extension
+## Step 1: Start the broker first
 
+Make sure the Docker environment is running before connecting from VS Code. From the `project/` folder:
+
+```bash
+docker compose up -d
+docker compose wait load-project
+```
+
+---
+
+## Step 2: Install the VS Code extension
+
+Choose either the VS Code UI or the terminal:
+
+### Option A: From the VS Code UI
 1. Open VS Code.
-2. Open the Extensions view (Shift+Command+X on macOS, Shift+Ctrl+X on Windows and Linux).
-3. Open the `…` menu at the top of that view and choose **Install from VSIX…**.
-4. Pick `vscode/vscode-lot-notebooks-1.0.0.vsix` from this repository.
+2. Open the **Extensions** view (`Cmd+Shift+X` on macOS, `Ctrl+Shift+X` on Windows/Linux).
+3. Click the **`…`** menu at the top right of the Extensions view and select **Install from VSIX…**.
+4. Select `vscode/vscode-lot-notebooks-1.0.0.vsix` from this repository and reload VS Code if prompted.
 
-Or, from the repository root:
+### Option B: From the terminal
+From the root of this repository, run:
 
 ```bash
 code --install-extension vscode/vscode-lot-notebooks-1.0.0.vsix
 ```
 
-Reload VS Code if it asks. Then **Git: Clone** this lesson, open `project/01-heartbeat.lotnb`, and connect to the broker. The connection steps are in the [VS Code guide](https://docs.coreflux.org/latest/quick-start/vscode).
+---
 
-## Development
+## Step 3: Open the project and connect to the broker
 
-Use this when you want to change the extension while you run the lesson. It loads the same v1.0.0 source in an Extension Development Host, instead of the VSIX above.
+1. In VS Code, open your local `weather-station-hackathon` folder (**File → Open Folder…**).
+2. Open `project/01-heartbeat.lotnb`.
+3. Connect the extension to your local broker using:
+   - **Host:** `localhost`
+   - **Port:** `1883`
+   - **Username:** `root`
+   - **Password:** `coreflux`
+   *(See the [VS Code quick-start guide](https://docs.coreflux.org/latest/quick-start/vscode) for screenshots of the connection bar.)*
+
+---
+
+## Developing or modifying the extension (Contributors)
+
+If you want to modify the VS Code extension itself while working through the labs, you can run v1.0.0 from source in an Extension Development Host instead of installing the VSIX:
 
 ```bash
 git clone --branch v1.0.0 --depth 1 https://github.com/CorefluxCommunity/VSCodeLotNotebook.git
@@ -31,6 +59,7 @@ cd VSCodeLotNotebook
 npm install
 ```
 
-Open that folder in VS Code and press **F5**. A second window opens with the extension loaded. In that window, open this lesson and connect to `localhost:1883` as `root` / `coreflux`.
-
-`npm run watch` rebuilds the extension while you edit. Contributor notes are in [development.md](https://github.com/CorefluxCommunity/VSCodeLotNotebook/blob/v1.0.0/docs/development.md) on that tag.
+1. Open the `VSCodeLotNotebook` folder in VS Code and press **F5**.
+2. A new **Extension Development Host** window opens with the extension loaded.
+3. In that second window, open `weather-station-hackathon` and connect to `localhost:1883` (`root` / `coreflux`).
+4. Run `npm run watch` to rebuild automatically as you edit. See [development.md](https://github.com/CorefluxCommunity/VSCodeLotNotebook/blob/v1.0.0/docs/development.md) for contributor notes.

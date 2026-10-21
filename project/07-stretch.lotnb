@@ -2,41 +2,41 @@
  {
   "kind": 1,
   "language": "markdown",
-  "value": "# Stretch goals\n\nPick any. Write your code in new cells here, one `DEFINE` per cell, and give every new piece its own name. To change a piece from an earlier lab (CampusWeather, the panel), edit its cell in that lab's notebook and run it again."
+  "value": "# Stretch Goals\n\nFinished Labs 1–6? Pick any challenge below! Add new LoT code cells right inside this notebook (one `DEFINE` per cell, giving each new entity its own unique name). If a challenge modifies an existing piece from an earlier lab (like `CampusWeather` or the `CampusWeather` panel), edit the cell in that earlier lab's notebook and click **▷ (Run Cell)** again."
  },
  {
   "kind": 1,
   "language": "markdown",
-  "value": "## 1. Protect the alert and raw topics (event licence)\n\nRight now any client can publish to `campus/weather/alerts/heat` (which emails the team) or to `campus/weather/raw` (which creates fake readings and history lines). Write a Rule that stops that.\n\nThink about who must still publish there: the CampusWeather Connector writes `raw` and HeatAlert writes `alerts/heat`. Then check: as `bob`, a publish there is refused, and `poll` still gives a reading and an alert. If readings stop, remove your Rule with `-removeRule <Name>`."
+  "value": "## 1. Protect the Alert and Raw Topics (Event Licence)\n\nRight now, any connected MQTT client can publish fake data to `campus/weather/raw` (creating bogus readings and CSV rows) or publish directly to `campus/weather/alerts/heat` (sending fake alert emails). Write a **Rule** that blocks untrusted clients from publishing to those topics.\n\n- **Hint:** Think carefully about who *must* still be allowed to publish there — the `CampusWeather` Connector writes to `raw`, and `HeatAlert` writes to `alerts/heat`.\n- **Verify:** Connect as `bob` and confirm his publish to `raw` or `alerts/heat` is refused, while publishing `poll` to `campus/weather/request` still produces a reading and an alert. (If readings stop working, remove your Rule with `-removeRule <Name>` in Command Console.)"
  },
  {
   "kind": 1,
   "language": "markdown",
-  "value": "## 2. Wind alert\n\nAdd a `config/wind_limit_kmh` topic and a `WindAlert` Action that works like HeatAlert, publishing `on`/`off` to `campus/weather/alerts/wind_active`."
+  "value": "## 2. Wind Alert\n\nCreate a `config/wind_limit_kmh` retained topic and a `WindAlert` Action (modeled after `HeatAlert` in Lab 4) that compares `wind_kmh` against `config/wind_limit_kmh` and publishes `\"on\"` or `\"off\"` to `campus/weather/alerts/wind_active`."
  },
  {
   "kind": 1,
   "language": "markdown",
-  "value": "## 3. Daily min and max\n\nIn an Action on `campus/weather/reading`, keep the day's lowest and highest temperature with `KEEP TOPIC \"campus/weather/stats/min\" WITH {t}` (the broker stores it without publishing; read it back with `GET TOPIC`). Publish them once a day with two Actions, `ON EVERY WEEKDAY AT \"23:59:00\"` and `ON EVERY WEEKEND AT \"23:59:00\"` (there is no `ON EVERY DAY AT`)."
+  "value": "## 3. Daily Min and Max Temperatures\n\nWrite an Action triggered on `campus/weather/reading` that tracks the day's lowest and highest temperatures using `KEEP TOPIC \"campus/weather/stats/min\" WITH {t}` (`KEEP TOPIC` stores the value on the Broker without broadcasting a publish; read it back with `GET TOPIC`).\n\nThen publish the daily summary once a day at `23:59:00` using two timer Actions: `ON EVERY WEEKDAY AT \"23:59:00\"` and `ON EVERY WEEKEND AT \"23:59:00\"` (note: LoT uses `WEEKDAY` / `WEEKEND` rather than `ON EVERY DAY AT`)."
  },
  {
   "kind": 1,
   "language": "markdown",
-  "value": "## 4. A second site\n\nAdd a second event to CampusWeather (Lab 3) with its own request and raw topics and a fixed latitude and longitude in the `ENDPOINT`."
+  "value": "## 4. Poll a Second Site\n\nAdd a second `ADD EVENT` block to `CampusWeather` (in `03-campus-weather.lotnb`) with its own request and raw topics (for example, `campus/weather/london/request` and `campus/weather/london/raw`) and fixed latitude/longitude coordinates in its `ENDPOINT`."
  },
  {
   "kind": 1,
   "language": "markdown",
-  "value": "## 5. Show more on the panel\n\nAdd the wind in mph and the time of the last reading to the Campus Weather panel (Lab 6): two more components, each bound with `BIND VALUE TO TOPIC \"campus/weather/reading\" WITH JSON_PATH \"wind_mph\"` (or `\"timestamp\"`). Widen the layout (`COLUMNS 6`) and give each its own `AT COLUMN`. Edit the panel cell in `06-panel` and run it again."
+  "value": "## 5. Show More on the Dashboard Panel\n\nExpand the `CampusWeather` panel in `06-panel.lotnb` to display wind speed in **mph** and the **UTC timestamp** of the last reading:\n- Widen the grid layout (`WITH LAYOUT \"grid\" COLUMNS 6 ROWS 1`).\n- Add two more components at `COLUMN 5` and `COLUMN 6`, bound to `campus/weather/reading` with `WITH JSON_PATH \"wind_mph\"` and `WITH JSON_PATH \"timestamp\"`."
  },
  {
   "kind": 1,
   "language": "markdown",
-  "value": "## 6. One Thing per site\n\nRewrite the station as a `DEFINE THING TEMPLATE` (see the slides) so a second site is one line. Put the template and `DEFINE THING campus OF WeatherStation` in one new cell and run it with ▷: the answer is *Applied Things 'WeatherStation', 'campus'*. The Thing's topics start with its name (`campus/request`, `campus/raw`, `campus/reading`): publish `poll` to `campus/request` to test it.\n\nIts Connector needs the same settings as CampusWeather (`ENABLE_CLIENT`, `USE_SSL`, `METHOD \"GET\"`), or the poll gets no answer. It is a 4th Connector, so on Community Edition (3 Connectors) remove one first (`-removeConnector <Name>`) or use the event licence."
+  "value": "## 6. One Thing per Site (`DEFINE THING TEMPLATE`)\n\nIn Broker 2.22, you can package the entire weather station as a reusable **`DEFINE THING TEMPLATE`** (shown on the final slide of `index.html`), so spinning up a second site takes just one line!\n\n- Add a new code cell here containing `DEFINE THING TEMPLATE WeatherStation` and `DEFINE THING campus OF WeatherStation`, then run it with **▷**: the Broker replies *Applied Things 'WeatherStation', 'campus'*.\n- The Thing's topics are prefixed with its instance name (`campus/request`, `campus/raw`, `campus/reading`) — publish `poll` to `campus/request` to test it.\n- **Important:** Its Connector needs the same settings as `CampusWeather` (`WITH ENABLE_CLIENT \"true\"`, `WITH USE_SSL \"true\"`, `WITH METHOD \"GET\"`). Because this creates a **4th Connector**, on Community Edition (which allows 3 Connectors) remove one first (`-removeConnector <Name>`) or activate your event licence."
  },
  {
   "kind": 1,
   "language": "markdown",
-  "value": "## Two LoT quirks\n\n- Compare against `\"on\"`/`\"off\"`, not the text `\"true\"`/`\"false\"`: LoT treats `\"false\"` as a boolean and the Action fails.\n- Don't put a product in parentheses after a division, like `{a} / ({b} * {c})`: it is worked out left to right. Divide in two steps: `SET \"x\" WITH ({a} / {b})`, then `({x} / {c})`."
+  "value": "## Two LoT Quirks to Keep in Mind\n\n- **Use `\"on\"`/`\"off\"` instead of `\"true\"`/`\"false\"`:** LoT parses the string `\"false\"` as a boolean literal, which can cause string comparisons in an Action to fail.\n- **Arithmetic associativity:** Avoid putting a multiplication in parentheses after a division, such as `{a} / ({b} * {c})` — LoT evaluates arithmetic left-to-right. Instead, divide in two steps: `SET \"x\" WITH ({a} / {b})`, then `({x} / {c})`."
  }
 ]

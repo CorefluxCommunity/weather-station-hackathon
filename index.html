@@ -282,15 +282,15 @@ code { font-family: var(--mono); font-size: 0.84em; background: var(--sunk); pad
         <h2>The Broker is the baseplate</h2>
         <p class="lead">Every piece you deploy sticks to it, and the LoT you write runs on it. Devices, apps and your logic all connect here.</p>
         <div class="card">
-          <p class="card-title">On the training station</p>
+          <p class="card-title">On your machine</p>
           <ul class="ticks">
-            <li>One Broker per station</li>
-            <li>The <b>HUB</b> at <code>http://localhost:3000</code> is the window onto it</li>
-            <li>Broker, HUB and Mailpit (a test inbox) start together</li>
+            <li>One Broker container running locally</li>
+            <li>The <b>Coreflux HUB</b> at <code>http://localhost:3000</code> is the window onto it</li>
+            <li>Broker, HUB, Mailpit (a test inbox), and the <code>weather-station</code> project start together</li>
           </ul>
         </div>
-        <div class="code"><span class="code-label">terminal</span><pre><code>cd project&#10;docker compose up -d</code></pre></div>
-        <p class="note">In class this is already running when you sit down.</p>
+        <div class="code"><span class="code-label">terminal</span><pre><code>cd project&#10;docker compose up -d&#10;docker compose wait load-project</code></pre></div>
+        <p class="note">Once <code>load-project</code> finishes, all 8 lab notebooks are ready in the HUB's <b>LoT Editor</b>.</p>
       </section>
 
       <section class="step" data-focus="topics" data-name="Topics" hidden>

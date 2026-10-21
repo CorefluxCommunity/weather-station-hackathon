@@ -2,7 +2,7 @@
  {
   "kind": 1,
   "language": "markdown",
-  "value": "# Lab 1: Heartbeat\n\n**Goal:** deploy your first Action and watch it in the Data Viewer.\n\n**You will build:** `Heartbeat`, an Action that publishes `ok` to `campus/weather/heartbeat` every 5 seconds.\n\n**How to run a cell:** click ▷ at the top left of the cell. **Deploy All** (top right) runs every cell of this notebook, top to bottom. Each cell answers *… added successfully*."
+  "value": "# Lab 1: Heartbeat\n\n**Goal:** Deploy your first **Action** to the Broker and watch its messages arrive live in the **Data Viewer**.\n\n**What is an Action?**\nIn LoT (Language of Things), an **Action** is a small piece of event-driven logic that runs directly inside the Broker: *\"When X happens, do Y.\"* Here, our trigger is a 5-second timer (`ON EVERY 5 SECONDS DO`), and the job is to publish `\"ok\"` to the topic `campus/weather/heartbeat`.\n\n**How to run a code cell:**\nClick the **▷ (Run Cell)** button at the top left of the code cell below (or click **Deploy All** at the top right of the notebook). The cell will reply: *Action 'Heartbeat' added successfully*."
  },
  {
   "kind": 2,
@@ -12,6 +12,6 @@
  {
   "kind": 1,
   "language": "markdown",
-  "value": "## Check it worked\n\nOpen **Data Viewer**. Under `campus` → `weather` you see `heartbeat`, and a new `ok` arrives every 5 seconds.\n\nDocs: [Action syntax](https://docs.coreflux.org/latest/lot-language/actions/syntax)."
+  "value": "## Check It Worked\n\nOpen **Data Viewer** from the bottom dock. In the topic tree, expand `campus` → `weather` → `heartbeat`. You will see a new `ok` message arriving every 5 seconds.\n\nDocs: [Action syntax](https://docs.coreflux.org/latest/lot-language/actions/syntax)."
  }
 ]

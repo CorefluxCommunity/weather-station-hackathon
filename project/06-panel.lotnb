@@ -2,7 +2,7 @@
  {
   "kind": 1,
   "language": "markdown",
-  "value": "# Lab 6: the Campus Weather panel\n\n**Goal:** a live dashboard for the station.\n\n**You will build:** `CampusWeather`, a Panel with four components: the °C gauge, the Fahrenheit value, the wind in km/h and the heat state (`on`/`off`). They read `campus/weather/reading` and `campus/weather/alerts/heat_active`.\n\nIndent every `WITH` line 4 spaces under `DEFINE PANEL`, as below. Each component picks its field from the reading with `WITH JSON_PATH \"…\"` on its `BIND` line."
+  "value": "# Lab 6: The Campus Weather Panel\n\n**Goal:** Build a live dashboard for your weather station inside the Coreflux HUB.\n\n**What you will build:**\n- **`CampusWeather` (Panel):** A 4-column grid dashboard (`DEFINE PANEL`) with four live components:\n  1. **`TempGauge` (`gauge`):** Temperature in °C (`-20` to `45` °C) from `campus/weather/reading`.\n  2. **`TempF` (`value`):** Temperature in °F from `campus/weather/reading`.\n  3. **`Wind` (`value`):** Wind speed in km/h from `campus/weather/reading`.\n  4. **`HeatState` (`text`):** Heat alert state (`on` / `off`) from `campus/weather/alerts/heat_active`.\n\n> **Syntax tip:** Indent every `WITH` line 4 spaces under `DEFINE PANEL`, as shown below. Each component extracts its JSON field from `campus/weather/reading` using `WITH JSON_PATH \"…\"` on its `BIND` line."
  },
  {
   "kind": 2,
@@ -12,6 +12,6 @@
  {
   "kind": 1,
   "language": "markdown",
-  "value": "## Check it worked\n\nOpen **Dashboards** from the dock: *Campus Weather* is listed; click it. The boxes show `---` until the next reading arrives: publish `poll` to `campus/weather/request` and all four values fill in (°C, °F, km/h, `on`/`off`).\n\nDocs: [Defining panels](https://docs.coreflux.org/latest/lot-language/panels/defining-panels) · [Data binding](https://docs.coreflux.org/latest/lot-language/panels/data-binding)."
+  "value": "## Check It Worked\n\n1. Open **Dashboards** from the bottom dock — you will see **Campus Weather** in the list. Click it to open your dashboard.\n2. Components show `---` until the next reading arrives. Open **Data Viewer → Publish** and send `poll` to `campus/weather/request`.\n3. Watch all four components populate live with °C, °F, km/h, and `on`/`off`!\n\nDocs: [Defining panels](https://docs.coreflux.org/latest/lot-language/panels/defining-panels) · [Data binding](https://docs.coreflux.org/latest/lot-language/panels/data-binding)."
  }
 ]
