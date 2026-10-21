@@ -92,10 +92,14 @@ template and the `exports/` folder.
    The repository lands in the tree, notebooks and `index.html` included. Click `index.html` for the
    platform overview (see below). Open `project/01-heartbeat` and click ▷ on its cell (Run Cell), or
    **Deploy All**. Do not use **Push project to broker**: every lab is deployed cell by cell.
-   **VS Code** is the other editor: Command Palette → **Git: Clone**, paste the same URL, pick a
-   folder and click **Open**. Install the **LoT Notebooks** extension
-   ([guide](https://docs.coreflux.org/latest/quick-start/vscode)), connect it to `localhost:1883`
-   as `root` / `coreflux`, and open `project/01-heartbeat.lotnb`.
+   **VS Code** is the other editor. Install LoT Notebooks **v1.0.0** from
+   [vscode/vscode-lot-notebooks-1.0.0.vsix](vscode/vscode-lot-notebooks-1.0.0.vsix): Extensions view,
+   `…` menu → **Install from VSIX…**, and pick that file. Or, from this repository:
+   `code --install-extension vscode/vscode-lot-notebooks-1.0.0.vsix`. Then Command Palette →
+   **Git: Clone**, paste the same URL, open `project/01-heartbeat.lotnb`, and connect to
+   `localhost:1883` as `root` / `coreflux`
+   ([guide](https://docs.coreflux.org/latest/quick-start/vscode)). To change the extension while you
+   use the lesson, follow the [development option](vscode/README.md#development).
 
 ![Project menu in the LoT Editor](docs/screenshots/37-hub-project-menu-no-clone.png)
 *Import is only for a copy that was not cloned. In the HUB, **New → From git…** clones the GitHub repository.*
@@ -422,4 +426,5 @@ Two LoT quirks to know when you write your own code:
   [Broker commands](https://docs.coreflux.org/latest/mqtt-broker/commands)
 - [Using the HUB](https://docs.coreflux.org/latest/quick-start/using-hub) ·
   [LoT Editor](https://docs.coreflux.org/hub/lot-editor) ·
-  [VS Code](https://docs.coreflux.org/latest/quick-start/vscode)
+  [VS Code](https://docs.coreflux.org/latest/quick-start/vscode) ·
+  [LoT Notebooks v1.0.0 in this repo](vscode/README.md)

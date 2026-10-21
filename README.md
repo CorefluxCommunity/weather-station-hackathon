@@ -10,6 +10,7 @@ the team once per heat episode and shows a live dashboard in the Coreflux HUB.
 - **Platform overview:** after cloning the lesson into the HUB, click `index.html` in the LoT Editor. Walkthrough in [HACKATHON.md](HACKATHON.md#platform-overview).
 - **Setup and reference:** [project/README.md](project/README.md).
 - **Notebooks and Docker setup:** [project/](project/).
+- **VS Code:** install [LoT Notebooks v1.0.0](vscode/vscode-lot-notebooks-1.0.0.vsix). Steps in [vscode/README.md](vscode/README.md).
 
 ## Prerequisites
 
@@ -60,7 +61,8 @@ If a check fails:
 2. `cd weather-station-hackathon/project` and `docker compose up -d`, then open http://localhost:3000.
 3. In the HUB, **LoT Editor → New → From git…** clones this repository from GitHub. The notebooks
    and `index.html` appear in the tree. Click `index.html` for the platform overview. In VS Code,
-   use **Git: Clone** and the **LoT Notebooks** extension.
+   install [LoT Notebooks v1.0.0](vscode/vscode-lot-notebooks-1.0.0.vsix) ([steps](vscode/README.md)),
+   then **Git: Clone** this repository.
 
 Details in [HACKATHON.md](HACKATHON.md#get-the-lesson).
 
