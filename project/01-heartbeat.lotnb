@@ -1,17 +1,23 @@
-[
- {
-  "kind": 1,
-  "language": "markdown",
-  "value": "# Lab 1: Heartbeat\n\n**Goal:** deploy your first Action and watch it in the Data Viewer.\n\n**You will build:** `Heartbeat`, an Action that publishes `ok` to `campus/weather/heartbeat` every 5 seconds.\n\n**How to run a cell:** click ▷ at the top left of the cell. **Deploy All** (top right) runs every cell of this notebook, top to bottom. Each cell answers *… added successfully*."
- },
- {
-  "kind": 2,
-  "language": "lot",
-  "value": "DEFINE ACTION Heartbeat\nON EVERY 5 SECONDS DO\n    PUBLISH TOPIC \"campus/weather/heartbeat\" WITH \"ok\""
- },
- {
-  "kind": 1,
-  "language": "markdown",
-  "value": "## Check it worked\n\nOpen **Data Viewer**. Under `campus` → `weather` you see `heartbeat`, and a new `ok` arrives every 5 seconds.\n\nDocs: [Action syntax](https://docs.coreflux.org/latest/lot-language/actions/syntax)."
- }
-]
+{
+  "version": 1,
+  "metadata": {
+    "title": "Lab 1 — Heartbeat"
+  },
+  "cells": [
+    {
+      "kind": 1,
+      "language": "markdown",
+      "value": "# Lab 1 — Heartbeat\n\nWelcome to your first **LoT (Language of Things)** notebook!\n\nIn Coreflux, an **Action** is a small event-driven rule that runs directly inside the broker. Every Action has:\n- A **trigger** — when it runs (for example, `ON EVERY 5 SECONDS DO` or `ON TOPIC \"...\" DO`).\n- A **body** — what it does (here, `PUBLISH TOPIC` sends a message to an MQTT topic).\n\n### How to run this lab\n1. Click the **▷ (Run / Deploy)** button on the code cell below to deploy `Heartbeat` to the broker.\n2. Open **Data Viewer** from the **bottom Dock**.\n3. Look for `campus` → `weather` → `heartbeat` in the topic tree and watch `\"ok\"` arrive every 5 seconds."
+    },
+    {
+      "kind": 2,
+      "language": "lot",
+      "value": "DEFINE ACTION Heartbeat\nON EVERY 5 SECONDS DO\n    PUBLISH TOPIC \"campus/weather/heartbeat\" WITH \"ok\"\n"
+    },
+    {
+      "kind": 1,
+      "language": "markdown",
+      "value": "**Next up:** Open **`02-model-processweather.lotnb`** in the left sidebar to turn raw weather JSON into a clean, structured reading."
+    }
+  ]
+}

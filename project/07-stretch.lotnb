@@ -1,42 +1,23 @@
-[
- {
-  "kind": 1,
-  "language": "markdown",
-  "value": "# Stretch goals\n\nPick any. Write your code in new cells here, one `DEFINE` per cell, and give every new piece its own name. To change a piece from an earlier lab (CampusWeather, the panel), edit its cell in that lab's notebook and run it again."
- },
- {
-  "kind": 1,
-  "language": "markdown",
-  "value": "## 1. Protect the alert and raw topics (event licence)\n\nRight now any client can publish to `campus/weather/alerts/heat` (which emails the team) or to `campus/weather/raw` (which creates fake readings and history lines). Write a Rule that stops that.\n\nThink about who must still publish there: the CampusWeather Connector writes `raw` and HeatAlert writes `alerts/heat`. Then check: as `bob`, a publish there is refused, and `poll` still gives a reading and an alert. If readings stop, remove your Rule with `-removeRule <Name>`."
- },
- {
-  "kind": 1,
-  "language": "markdown",
-  "value": "## 2. Wind alert\n\nAdd a `config/wind_limit_kmh` topic and a `WindAlert` Action that works like HeatAlert, publishing `on`/`off` to `campus/weather/alerts/wind_active`."
- },
- {
-  "kind": 1,
-  "language": "markdown",
-  "value": "## 3. Daily min and max\n\nIn an Action on `campus/weather/reading`, keep the day's lowest and highest temperature with `KEEP TOPIC \"campus/weather/stats/min\" WITH {t}` (the broker stores it without publishing; read it back with `GET TOPIC`). Publish them once a day with two Actions, `ON EVERY WEEKDAY AT \"23:59:00\"` and `ON EVERY WEEKEND AT \"23:59:00\"` (there is no `ON EVERY DAY AT`)."
- },
- {
-  "kind": 1,
-  "language": "markdown",
-  "value": "## 4. A second site\n\nAdd a second event to CampusWeather (Lab 3) with its own request and raw topics and a fixed latitude and longitude in the `ENDPOINT`."
- },
- {
-  "kind": 1,
-  "language": "markdown",
-  "value": "## 5. Show more on the panel\n\nAdd the wind in mph and the time of the last reading to the Campus Weather panel (Lab 6): two more components, each bound with `BIND VALUE TO TOPIC \"campus/weather/reading\" WITH JSON_PATH \"wind_mph\"` (or `\"timestamp\"`). Widen the layout (`COLUMNS 6`) and give each its own `AT COLUMN`. Edit the panel cell in `06-panel` and run it again."
- },
- {
-  "kind": 1,
-  "language": "markdown",
-  "value": "## 6. One Thing per site\n\nRewrite the station as a `DEFINE THING TEMPLATE` (see the slides) so a second site is one line. Put the template and `DEFINE THING campus OF WeatherStation` in one new cell and run it with ▷: the answer is *Applied Things 'WeatherStation', 'campus'*. The Thing's topics start with its name (`campus/request`, `campus/raw`, `campus/reading`): publish `poll` to `campus/request` to test it.\n\nIts Connector needs the same settings as CampusWeather (`ENABLE_CLIENT`, `USE_SSL`, `METHOD \"GET\"`), or the poll gets no answer. It is a 4th Connector, so on Community Edition (3 Connectors) remove one first (`-removeConnector <Name>`) or use the event licence."
- },
- {
-  "kind": 1,
-  "language": "markdown",
-  "value": "## Two LoT quirks\n\n- Compare against `\"on\"`/`\"off\"`, not the text `\"true\"`/`\"false\"`: LoT treats `\"false\"` as a boolean and the Action fails.\n- Don't put a product in parentheses after a division, like `{a} / ({b} * {c})`: it is worked out left to right. Divide in two steps: `SET \"x\" WITH ({a} / {b})`, then `({x} / {c})`."
- }
-]
+{
+  "version": 1,
+  "metadata": {
+    "title": "07 — Stretch Goals"
+  },
+  "cells": [
+    {
+      "kind": 1,
+      "language": "markdown",
+      "value": "# 07 — Stretch Goals\n\nFinished Labs 1–6? Pick any of the 6 optional challenges below, write your LoT definitions in a new cell (or edit the existing notebooks), and deploy!\n\n---\n\n### 1. High-wind alert\nAdd a retained threshold on `config/wind_limit_kmh` (for example, `50`) and create a `WindAlert` Action that publishes to `campus/weather/alerts/wind` with a retained `campus/weather/alerts/wind_active` flag — following the same deduplication pattern as `HeatAlert` in Lab 4.\n\n### 2. Multi-city stations\nPoll a second city (e.g. Lisbon or Tokyo) into `campus/weather/<city>/reading`. Parameterize the topic path or add a second `EVENT` to the `CampusWeather` REST Connector.\n\n### 3. Rolling 5-reading average\nKeep the last 5 temperatures in retained topics (e.g. `campus/weather/window/1` … `5`) and publish the rolling mean to `campus/weather/reading/temperature_c_avg5`.\n\n### 4. Richer HTML email\nEdit `project/templates/heat-alert.html` on your computer to include `wind_kmh` and `weather_code` using `{value.json.wind_kmh}` and `{value.json.weather_code}`, or add a second `EVENT` on `HeatMail` that sends an **all-clear** email when `heat_active` transitions from `\"on\"` back to `\"off\"`.\n\n### 5. Expand the Panel\nAdd a `GAUGE` or `LINE` chart for `campus/weather/reading/temperature_c` to `CampusWeather` in `06-panel.lotnb`, plus a second `BADGE` for `wind_active`.\n\n---\n\n### 6. Refactor the station into a `DEFINE THING`\n\nBroker 2.22 includes a technical preview of **`DEFINE THING`** — a single unified declaration that bundles a device's properties, `CONNECTOR`, `MODEL` (`EMITS`), and `ON EVERY` / `ON` logic together.\n\nReplace the separate `CampusWeather` Connector + `WeatherReading` Model + `ProcessWeather` / `RequestWeather` Actions with one `DEFINE THING CampusStation` publishing to `campus/weather/thing/reading`.\n\n> **Community Edition note:** A `THING` creates its own internal Connector (`CampusStation_OpenMeteo`). Because Community Edition allows up to **3 Connectors** total, remove one existing Connector first in **Command Console** (`-removeConnector WeatherHistory`) if you haven't activated an event licence.\n\nClick **▷** on the starter cell below to try `DEFINE THING`:"
+    },
+    {
+      "kind": 2,
+      "language": "lot",
+      "value": "DEFINE THING CampusStation\n    WITH DESCRIPTION \"Campus weather station\"\n    WITH LOCATION \"Main Quad\"\n\n    PROPERTY \"station_id\" TYPE STRING DEFAULT \"campus-main\"\n    PROPERTY \"temperature_c\" TYPE DOUBLE UNIT \"°C\"\n    PROPERTY \"temperature_f\" TYPE DOUBLE UNIT \"°F\"\n    PROPERTY \"wind_kmh\" TYPE DOUBLE UNIT \"km/h\"\n    PROPERTY \"weather_code\" TYPE INT\n\n    CONNECTOR OpenMeteo TYPE REST\n        WITH BASE_URL \"https://api.open-meteo.com\"\n        WITH TIMEOUT 10\n        WITH VERIFY_SSL TRUE\n        ADD EVENT FetchCurrent\n            WITH SOURCE_TOPIC \"campus/weather/thing/fetch\"\n            WITH DESTINATION_TOPIC \"campus/weather/thing/raw\"\n            WITH METHOD \"GET\"\n            WITH ENDPOINT \"/v1/forecast\"\n            WITH QUERY_PARAMS_FROM_PAYLOAD TRUE\n\n    MODEL Reading COLLAPSED\n        ADD STRING \"station\" WITH {station_id}\n        ADD DOUBLE \"temperature_c\" WITH {temperature_c}\n        ADD DOUBLE \"temperature_f\" WITH {temperature_f}\n        ADD DOUBLE \"wind_kmh\" WITH {wind_kmh}\n        ADD INT \"weather_code\" WITH {weather_code}\n        ADD STRING \"observed_at\" WITH TIMESTAMP \"UTC\"\n\n    EMITS Reading TO \"campus/weather/thing/reading\"\n\n    ON EVERY 60 SECONDS DO\n        SET \"lat\" WITH (GET ENV \"WEATHER_LAT\")\n        SET \"lon\" WITH (GET ENV \"WEATHER_LON\")\n        PUBLISH TOPIC \"campus/weather/thing/fetch\" WITH \"?latitude=\" + {lat} + \"&longitude=\" + {lon} + \"&current=temperature_2m,wind_speed_10m,weather_code\"\n\n    ON TOPIC \"campus/weather/thing/raw\" DO\n        SET \"temperature_c\" WITH (GET JSON \"current.temperature_2m\" IN PAYLOAD AS DOUBLE)\n        SET \"wind_kmh\" WITH (GET JSON \"current.wind_speed_10m\" IN PAYLOAD AS DOUBLE)\n        SET \"weather_code\" WITH (GET JSON \"current.weather_code\" IN PAYLOAD AS INT)\n        SET \"temperature_f\" WITH (({temperature_c} * 1.8) + 32)\n        EMIT Reading\n"
+    },
+    {
+      "kind": 1,
+      "language": "markdown",
+      "value": "### Two handy LoT tips for the stretch goals\n\n1. **`GET TOPIC` vs. `PAYLOAD`:**\n   - Inside `ON TOPIC \"x\" DO`, use **`PAYLOAD`** (or `GET JSON \"field\" IN PAYLOAD AS DOUBLE`) to read the message that triggered the Action.\n   - Use **`GET TOPIC \"other/topic\" AS STRING`** only to read a **different** topic's retained value.\n2. **Keep arithmetic expressions parenthesized:**\n   - Write `SET \"temp_f\" WITH (({temp_c} * 1.8) + 32)`.\n   - Avoid chaining another operator onto a parenthesized expression without outer parentheses (for example, `({a} + {b}) / 2` will fail to parse — write `(({a} + {b}) / 2)` instead)."
+    }
+  ]
+}

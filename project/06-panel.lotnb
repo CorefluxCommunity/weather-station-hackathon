@@ -1,17 +1,23 @@
-[
- {
-  "kind": 1,
-  "language": "markdown",
-  "value": "# Lab 6: the Campus Weather panel\n\n**Goal:** a live dashboard for the station.\n\n**You will build:** `CampusWeather`, a Panel with four components: the °C gauge, the Fahrenheit value, the wind in km/h and the heat state (`on`/`off`). They read `campus/weather/reading` and `campus/weather/alerts/heat_active`.\n\nIndent every `WITH` line 4 spaces under `DEFINE PANEL`, as below. Each component picks its field from the reading with `WITH JSON_PATH \"…\"` on its `BIND` line."
- },
- {
-  "kind": 2,
-  "language": "lot",
-  "value": "DEFINE PANEL CampusWeather\n    WITH VISIBILITY PUBLIC\n    WITH STATE PUBLISHED\n    WITH TITLE \"Campus Weather\"\n    WITH LAYOUT \"grid\" COLUMNS 4 ROWS 1\n\n    ADD COMPONENT \"TempGauge\" WITH TYPE \"gauge\"\n        AT COLUMN 1 ROW 1\n        SET LABEL \"Temperature\"\n        SET RANGE FROM -20 TO 45\n        SET UNIT \"°C\"\n        BIND VALUE TO TOPIC \"campus/weather/reading\" WITH JSON_PATH \"temperature_c\"\n\n    ADD COMPONENT \"TempF\" WITH TYPE \"value\"\n        AT COLUMN 2 ROW 1\n        SET LABEL \"Fahrenheit\"\n        SET UNIT \"°F\"\n        SET DECIMALS 1\n        BIND VALUE TO TOPIC \"campus/weather/reading\" WITH JSON_PATH \"temperature_f\"\n\n    ADD COMPONENT \"Wind\" WITH TYPE \"value\"\n        AT COLUMN 3 ROW 1\n        SET LABEL \"Wind\"\n        SET UNIT \"km/h\"\n        SET DECIMALS 1\n        BIND VALUE TO TOPIC \"campus/weather/reading\" WITH JSON_PATH \"wind_kmh\"\n\n    ADD COMPONENT \"HeatState\" WITH TYPE \"text\"\n        AT COLUMN 4 ROW 1\n        SET LABEL \"Heat alert\"\n        BIND CONTENT TO TOPIC \"campus/weather/alerts/heat_active\""
- },
- {
-  "kind": 1,
-  "language": "markdown",
-  "value": "## Check it worked\n\nOpen **Dashboards** from the dock: *Campus Weather* is listed; click it. The boxes show `---` until the next reading arrives: publish `poll` to `campus/weather/request` and all four values fill in (°C, °F, km/h, `on`/`off`).\n\nDocs: [Defining panels](https://docs.coreflux.org/latest/lot-language/panels/defining-panels) · [Data binding](https://docs.coreflux.org/latest/lot-language/panels/data-binding)."
- }
-]
+{
+  "version": 1,
+  "metadata": {
+    "title": "Lab 6 — CampusWeather Panel"
+  },
+  "cells": [
+    {
+      "kind": 1,
+      "language": "markdown",
+      "value": "# Lab 6 — `CampusWeather` Dashboard Panel\n\nA **Panel** (`DEFINE PANEL`) is a live operator dashboard defined in LoT and rendered inside the HUB's **Dashboards** window. It subscribes directly to your MQTT topics — no frontend code required.\n\n### What this Panel creates\n- A 12-column responsive `GRID` layout.\n- Three **`STAT` cards** across the top row (`SPAN 4` each = 12 columns) showing **Temperature (°C)**, **Temperature (°F)**, and **Wind Speed (km/h)**.\n- One **`BADGE` indicator** on the second row (`SPAN 4`) showing **Heat Alert** (`on` in red vs. `off` in green).\n\n### Deploy and view your dashboard\n1. Click **▷** on the code cell below.\n2. Open **Dashboards** from the **bottom Dock** and click **Campus Weather**.\n3. If any card shows `--`, open **Data Viewer → Publish** and send `poll` to `campus/weather/request` to push a fresh reading."
+    },
+    {
+      "kind": 2,
+      "language": "lot",
+      "value": "DEFINE PANEL CampusWeather\n    WITH TITLE \"Campus Weather\"\n    WITH DESCRIPTION \"Live readings from the campus station\"\n    WITH ICON \"cloud-sun\"\n    WITH DENSITY \"comfortable\"\n    WITH REFRESH 5\n\n    LAYOUT USING GRID WITH COLUMNS 12\n\n        SECTION \"Current Conditions\" WITH ICON \"thermometer\" COLLAPSIBLE FALSE\n\n            WIDGET \"Temperature (°C)\" AS STAT\n                WITH SOURCE TOPIC \"campus/weather/reading/temperature_c\"\n                WITH UNIT \"°C\"\n                WITH DECIMALS 1\n                WITH COLOR \"#f97316\"\n                WITH ICON \"thermometer\"\n                WITH SPAN 4\n\n            WIDGET \"Temperature (°F)\" AS STAT\n                WITH SOURCE TOPIC \"campus/weather/reading/temperature_f\"\n                WITH UNIT \"°F\"\n                WITH DECIMALS 1\n                WITH COLOR \"#fb923c\"\n                WITH ICON \"thermometer\"\n                WITH SPAN 4\n\n            WIDGET \"Wind Speed\" AS STAT\n                WITH SOURCE TOPIC \"campus/weather/reading/wind_kmh\"\n                WITH UNIT \"km/h\"\n                WITH DECIMALS 1\n                WITH COLOR \"#38bdf8\"\n                WITH ICON \"wind\"\n                WITH SPAN 4\n\n        SECTION \"Alerts\" WITH ICON \"bell\" COLLAPSIBLE FALSE\n\n            WIDGET \"Heat Alert\" AS BADGE\n                WITH SOURCE TOPIC \"campus/weather/alerts/heat_active\"\n                WITH ICON \"flame\"\n                WITH SPAN 4\n                WITH MAPPING\n                    WHEN \"on\" LABEL \"HEAT ALERT\" COLOR \"#ef4444\"\n                    WHEN \"off\" LABEL \"Normal\" COLOR \"#22c55e\"\n"
+    },
+    {
+      "kind": 1,
+      "language": "markdown",
+      "value": "**Congratulations!** You have built the entire Campus Weather Station pipeline end to end.\n\nWant to go further? Open **`07-stretch.lotnb`** in the left sidebar for 6 optional stretch challenges!"
+    }
+  ]
+}

@@ -1,32 +1,33 @@
-[
- {
-  "kind": 1,
-  "language": "markdown",
-  "value": "# Lab 3: real weather from a web API\n\n**Goal:** fetch the real weather for your site.\n\n**You will build:**\n1. `CampusWeather`, a Connector: when anything is published to `campus/weather/request`, it calls [Open-Meteo](https://open-meteo.com) and publishes the answer to `campus/weather/raw`. ProcessWeather (Lab 2) takes it from there.\n2. `RequestWeather`, an Action: publishes `poll` to `campus/weather/request` every 5 minutes.\n\nA Connector links the broker to the outside world. Community Edition allows 3; the lesson uses exactly 3 (this one and two in Lab 4)."
- },
- {
-  "kind": 1,
-  "language": "markdown",
-  "value": "## 1. CampusWeather\n\nThe broker fills in `{env.WEATHER_LAT}` and `{env.WEATHER_LON}` from the variables you set in `00-setup`. To change a Connector later, edit the cell and run it again: the new version replaces the old one. (`DEFINE ROUTE` is the older spelling of `DEFINE CONNECTOR`; both work.)"
- },
- {
-  "kind": 2,
-  "language": "lot",
-  "value": "DEFINE CONNECTOR CampusWeather WITH TYPE REST_API\n    ADD REST_API_CONFIG\n        WITH BASE_ADDRESS \"https://api.open-meteo.com\"\n        WITH ENABLE_CLIENT \"true\"\n        WITH USE_SSL \"true\"\n    ADD EVENT GetCurrentWeather\n        WITH SOURCE_TOPIC \"campus/weather/request\"\n        WITH DESTINATION_TOPIC \"campus/weather/raw\"\n        WITH METHOD \"GET\"\n        WITH ENDPOINT \"/v1/forecast?latitude={env.WEATHER_LAT}&longitude={env.WEATHER_LON}&current=temperature_2m,wind_speed_10m&wind_speed_unit=kmh\""
- },
- {
-  "kind": 1,
-  "language": "markdown",
-  "value": "## 2. RequestWeather\n\nThe payload does not matter: the Connector reads the site from the variables."
- },
- {
-  "kind": 2,
-  "language": "lot",
-  "value": "DEFINE ACTION RequestWeather\nON EVERY 5 MINUTES DO\n    PUBLISH TOPIC \"campus/weather/request\" WITH \"poll\""
- },
- {
-  "kind": 1,
-  "language": "markdown",
-  "value": "## Check it worked\n\n**Don't wait for RequestWeather:** its first poll comes 5 minutes after you deploy it. In **Data Viewer → Publish**, publish `poll` to `campus/weather/request` yourself.\n\nWithin a few seconds: the Open-Meteo answer on `campus/weather/raw`, then a reading for your site on `campus/weather/reading`.\n\nSomething on `campus/weather/errors` instead? Read it. *\"The service is overloaded\"* means Open-Meteo is busy: wait a minute and poll again.\n\nDocs: [REST API connectors](https://docs.coreflux.org/latest/lot-language/routes/rest-api-routes)."
- }
-]
+{
+  "version": 1,
+  "metadata": {
+    "title": "Lab 3 — CampusWeather Connector & RequestWeather"
+  },
+  "cells": [
+    {
+      "kind": 1,
+      "language": "markdown",
+      "value": "# Lab 3 — `CampusWeather` Connector & `RequestWeather` Action\n\nA **Connector** bridges MQTT topics to an external system — here, the free [Open-Meteo HTTPS API](https://open-meteo.com/) (no API key needed).\n\n### How the two pieces work together\n1. **`CampusWeather` (REST Connector):** Listens on `campus/weather/fetch`. Whenever a message arrives on that topic, it appends the message payload (the query string) to `https://api.open-meteo.com/v1/forecast` and publishes the HTTP JSON response to `campus/weather/raw`.\n2. **`RequestWeather` (Action):** Runs every 60 seconds (`ON EVERY 60 SECONDS DO`) **and** whenever you publish anything to `campus/weather/request` (`ON TOPIC \"campus/weather/request\" DO`). It reads `WEATHER_LAT` and `WEATHER_LON` from the environment variables you set in `00-setup` and publishes the query string to `campus/weather/fetch`.\n\n### Cell 1: Deploy the `CampusWeather` Connector\nClick **▷** on the cell below:"
+    },
+    {
+      "kind": 2,
+      "language": "lot",
+      "value": "DEFINE CONNECTOR CampusWeather WITH TYPE REST\n    ADD REST_CONFIG\n        WITH BASE_URL \"https://api.open-meteo.com\"\n        WITH TIMEOUT 10\n        WITH VERIFY_SSL TRUE\n    ADD EVENT FetchCurrent\n        WITH SOURCE_TOPIC \"campus/weather/fetch\"\n        WITH DESTINATION_TOPIC \"campus/weather/raw\"\n        WITH METHOD \"GET\"\n        WITH ENDPOINT \"/v1/forecast\"\n        WITH QUERY_PARAMS_FROM_PAYLOAD TRUE\n"
+    },
+    {
+      "kind": 1,
+      "language": "markdown",
+      "value": "### Cell 2: Deploy the `RequestWeather` Action\nClick **▷** on the cell below (or click **Deploy All** at the top right of the notebook):"
+    },
+    {
+      "kind": 2,
+      "language": "lot",
+      "value": "DEFINE ACTION RequestWeather\nON EVERY 60 SECONDS DO\n    SET \"lat\" WITH (GET ENV \"WEATHER_LAT\")\n    SET \"lon\" WITH (GET ENV \"WEATHER_LON\")\n    PUBLISH TOPIC \"campus/weather/fetch\" WITH \"?latitude=\" + {lat} + \"&longitude=\" + {lon} + \"&current=temperature_2m,wind_speed_10m,weather_code\"\nON TOPIC \"campus/weather/request\" DO\n    SET \"lat\" WITH (GET ENV \"WEATHER_LAT\")\n    SET \"lon\" WITH (GET ENV \"WEATHER_LON\")\n    PUBLISH TOPIC \"campus/weather/fetch\" WITH \"?latitude=\" + {lat} + \"&longitude=\" + {lon} + \"&current=temperature_2m,wind_speed_10m,weather_code\"\n"
+    },
+    {
+      "kind": 1,
+      "language": "markdown",
+      "value": "### Trigger an immediate weather fetch\n\nYou don't have to wait 60 seconds for the timer:\n1. Open **Data Viewer → Publish**.\n2. Publish payload `poll` to topic **`campus/weather/request`**.\n3. Check **`campus/weather/raw`** (the live Open-Meteo response) and **`campus/weather/reading`** (automatically processed by your Lab 2 Action!).\n\n**Next up:** Open **`04-heat-alert-history-email.lotnb`** to add heat alerts, CSV logging, and email notifications."
+    }
+  ]
+}

@@ -1,10 +1,14 @@
 # Weather-station hackathon: broker + HUB + Mailpit (test mail server).
 #
 #   docker compose up -d        start everything
+#   docker compose wait load-project
+#                               finishes when the lesson is loaded on the broker
 #   docker compose down         stop (your broker data is kept in the broker-data volume)
 #   docker compose down -v      stop and wipe the broker (start the labs from zero)
 #
 # Then open the HUB at http://localhost:3000 and Mailpit at http://localhost:8025.
+# The load-project service sends -addProject and -loadProject so the repository
+# is the active project (weather-station) without a separate clone step.
 #
 # Images: Broker 2.22.0 and HUB 2.12.0.
 # Set BROKER_IMAGE / HUB_IMAGE to full image names to override the tags.
@@ -22,6 +26,10 @@ services:
       - "9100:9100"   # health: http://localhost:9100/health
     volumes:
       - broker-data:/etc/project          # everything the broker stores
+      # Repo root, mounted under a stable directory name. -addProject uses that
+      # name (weather-station), whether the clone folder is weather-station-hackathon
+      # or weather-station-hackathon-main.
+      - ..:/opt/weather-station:ro
       - ./templates:/templates:ro         # heat-alert.html for the HeatMail Connector
       - ./exports:/data/exports           # campus-weather.csv from the WeatherHistory Connector
     environment:
@@ -44,6 +52,25 @@ services:
       - HUB_DEFAULT_CONNECTION_PORT=1883
     volumes:
       - hub-data:/opt/coreflux-hub/data
+
+  # One-shot: exits 0 when -loadProject weather-station has succeeded.
+  # The broker image has no shell, so this container is the MQTT client.
+  load-project:
+    image: eclipse-mosquitto:2
+    container_name: weather-load-project
+    depends_on:
+      - broker
+    restart: "no"
+    volumes:
+      - ./scripts/load-project.sh:/load-project.sh:ro
+    environment:
+      MQTT_HOST: broker
+      MQTT_PORT: "1883"
+      MQTT_USER: root
+      MQTT_PASSWORD: coreflux
+      PROJECT_PATH: /opt/weather-station
+      PROJECT_NAME: weather-station
+    entrypoint: ["/bin/sh", "/load-project.sh"]
 
   mailpit:
     image: axllent/mailpit:latest
